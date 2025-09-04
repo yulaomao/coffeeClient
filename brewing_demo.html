@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>制作演示 - 智能咖啡机</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        /* 临时样式用于演示 */
+        .demo-brewing {
+            background: var(--bg-dark);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body class="brewing-page">
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="status-indicator">
+                        <div class="status-dot status-online"></div>
+                        <span>10:25</span>
+                    </div>
+                </div>
+                <div class="col text-center">
+                    <div class="status-indicator">
+                        <i class="fas fa-signal"></i>
+                        <span>在线</span>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <div class="status-indicator">
+                        <i class="fas fa-coffee"></i>
+                        <span>5</span>
+                        <small>款可选</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="brewing-nav">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <a href="/" class="btn btn-cyber">
+                        <i class="fas fa-home me-2"></i>返回首页
+                    </a>
+                </div>
+                <div class="col text-center">
+                    <h2 class="text-primary mb-0 fw-bold">
+                        <i class="fas fa-cogs me-2"></i>正在制作您的咖啡
+                    </h2>
+                </div>
+                <div class="col-auto">
+                    <div class="text-end">
+                        <small class="text-secondary">订单号: DEMO-001</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要制作区域 -->
+    <div class="brewing-container">
+        <!-- 咖啡机图标 -->
+        <div class="coffee-machine-icon">
+            <i class="fas fa-coffee-togo"></i>
+        </div>
+        
+        <!-- 进度环 -->
+        <div class="progress-ring-container">
+            <svg class="progress-ring-svg" viewBox="0 0 200 200">
+                <circle class="progress-ring-bg" cx="100" cy="100" r="90"></circle>
+                <circle class="progress-ring-progress" cx="100" cy="100" r="90" id="progressRing"></circle>
+            </svg>
+            <div class="progress-ring-content">
+                <div class="progress-percentage" id="progressPercentage">45%</div>
+                <div class="progress-label">制作进度</div>
+            </div>
+        </div>
+        
+        <!-- ETA 显示 -->
+        <div class="eta-display">
+            <div class="eta-time" id="etaTime">1:25</div>
+            <div class="eta-label">预计剩余时间</div>
+        </div>
+        
+        <!-- 阶段指示器 -->
+        <div class="stage-indicators">
+            <div class="stage-indicator completed" id="stage-grind">
+                <div class="stage-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <div class="stage-name">研磨咖啡豆</div>
+            </div>
+            <div class="stage-indicator active" id="stage-extract">
+                <div class="stage-icon">
+                    <i class="fas fa-tint"></i>
+                </div>
+                <div class="stage-name">萃取咖啡</div>
+            </div>
+            <div class="stage-indicator" id="stage-milk">
+                <div class="stage-icon">
+                    <i class="fas fa-glass-whiskey"></i>
+                </div>
+                <div class="stage-name">添加牛奶</div>
+            </div>
+            <div class="stage-indicator" id="stage-finish">
+                <div class="stage-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stage-name">完成制作</div>
+            </div>
+        </div>
+        
+        <!-- 订单信息卡片 -->
+        <div class="order-info-card">
+            <div class="order-header">
+                <div class="order-id">订单 #DEMO-001</div>
+                <div class="order-status" id="orderStatus">制作中</div>
+            </div>
+            <div class="order-details">
+                <div class="detail-row">
+                    <span class="detail-label">饮品名称</span>
+                    <span class="detail-value" id="drinkName">经典美式</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">当前步骤</span>
+                    <span class="detail-value" id="currentStep">萃取咖啡精华...</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">制作时间</span>
+                    <span class="detail-value" id="brewingTime">01:35</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 演示进度环动画
+        document.addEventListener('DOMContentLoaded', function() {
+            const circumference = 2 * Math.PI * 90;
+            const progress = 45;
+            const offset = circumference - (progress / 100) * circumference;
+            document.getElementById('progressRing').style.strokeDashoffset = offset;
+        });
+    </script>
+</body>
+</html>

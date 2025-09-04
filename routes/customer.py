@@ -480,6 +480,12 @@ def brewing(order_id):
                              error_code=500,
                              error_message='页面加载失败'), 500
 
+@customer_bp.route('/brewing_demo')
+def brewing_demo():
+    """制作演示页面"""
+    return render_template('customer/brewing.html', 
+                         order_id='DEMO-001')
+
 @customer_bp.route('/done/<order_id>')
 def done(order_id):
     """完成页面"""
