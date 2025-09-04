@@ -1,84 +1,303 @@
 {% extends "base.html" %}
 
-{% block title %}欢迎使用智能咖啡机{% endblock %}
+{% block title %}智能咖啡机 - 触摸开始{% endblock %}
 
 {% block body_class %}fullscreen{% endblock %}
 
+{% block head %}
+<style>
+    /* 科幻吸引屏样式 */
+    .attraction-screen {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    /* 动态粒子背景 */
+    .particles-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+    
+    .particle {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: var(--neon-cyan);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: float-particle 8s linear infinite;
+    }
+    
+    @keyframes float-particle {
+        0% {
+            transform: translateY(100vh) scale(0);
+            opacity: 0;
+        }
+        10% {
+            opacity: 0.6;
+        }
+        90% {
+            opacity: 0.6;
+        }
+        100% {
+            transform: translateY(-100px) scale(1);
+            opacity: 0;
+        }
+    }
+    
+    /* 主要内容区域 */
+    .main-content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        max-width: 800px;
+        padding: 2rem;
+    }
+    
+    /* 品牌标识动画 */
+    .brand-logo {
+        font-size: 6rem;
+        color: var(--neon-cyan);
+        margin-bottom: 2rem;
+        animation: logo-pulse 3s ease-in-out infinite;
+        filter: drop-shadow(0 0 20px var(--neon-cyan));
+    }
+    
+    @keyframes logo-pulse {
+        0%, 100% { 
+            transform: scale(1);
+            filter: drop-shadow(0 0 20px var(--neon-cyan));
+        }
+        50% { 
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 30px var(--neon-cyan));
+        }
+    }
+    
+    /* 标题霓虹效果 */
+    .neon-title {
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        text-shadow: 
+            0 0 5px var(--neon-cyan),
+            0 0 10px var(--neon-cyan),
+            0 0 15px var(--neon-cyan);
+        margin-bottom: 1rem;
+        animation: neon-flicker 4s ease-in-out infinite;
+    }
+    
+    @keyframes neon-flicker {
+        0%, 100% { opacity: 1; }
+        95% { opacity: 1; }
+        96% { opacity: 0.8; }
+        97% { opacity: 1; }
+        98% { opacity: 0.9; }
+        99% { opacity: 1; }
+    }
+    
+    /* 特色展示卡片 */
+    .feature-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-md));
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        transition: var(--transition-normal);
+        margin-bottom: 1rem;
+    }
+    
+    .feature-card:hover {
+        background: var(--glass-bg-hover);
+        border-color: var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0, 255, 198, 0.2);
+    }
+    
+    .feature-icon {
+        font-size: 2.5rem;
+        color: var(--neon-cyan);
+        margin-bottom: 1rem;
+        filter: drop-shadow(0 0 10px var(--neon-cyan));
+    }
+    
+    /* 开始按钮 */
+    .start-button {
+        font-size: 1.8rem;
+        padding: 1.5rem 3rem;
+        margin: 2rem 0;
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
+        border: none;
+        border-radius: var(--radius-full);
+        color: var(--text-inverse);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        box-shadow: 
+            0 0 20px rgba(0, 255, 198, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.3);
+        transition: var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .start-button:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 
+            0 0 30px rgba(0, 255, 198, 0.6),
+            0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    .start-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: var(--transition-slow);
+    }
+    
+    .start-button:hover::before {
+        left: 100%;
+    }
+    
+    /* QR码扫描区域 */
+    .qr-section {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-md));
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+    
+    /* 呼吸动画 */
+    .breathe {
+        animation: breathe 2s ease-in-out infinite;
+    }
+    
+    @keyframes breathe {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.02); }
+    }
+    
+    /* 底部操作区域 */
+    .bottom-actions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-xl));
+        border-top: 1px solid var(--glass-border);
+        padding: 1rem 0;
+        z-index: var(--z-fixed);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container-fluid h-100 p-0">
-    <!-- 吸引屏内容 -->
-    <div class="row h-100 m-0">
-        <!-- 主要内容区 -->
-        <div class="col-12 h-100 d-flex flex-column justify-content-center align-items-center text-center p-4">
-            <!-- 品牌标识 -->
-            <div class="mb-5">
-                <i class="fas fa-coffee text-white mb-3" style="font-size: 6rem; opacity: 0.9;"></i>
-                <h1 class="display-2 text-white fw-bold mb-2" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
-                    智能咖啡机
-                </h1>
-                <p class="lead text-white-50 mb-0" style="font-size: 1.5rem;">
-                    Fresh Coffee • Anytime • Anywhere
-                </p>
-            </div>
-            
-            <!-- 特色展示 -->
-            <div class="row mb-5 w-100" style="max-width: 800px;">
-                <div class="col-md-4 mb-3">
-                    <div class="text-white">
-                        <i class="fas fa-clock mb-2" style="font-size: 2rem;"></i>
-                        <h5>快速制作</h5>
-                        <small class="text-white-50">60秒即享新鲜咖啡</small>
+<div class="attraction-screen">
+    <!-- 动态粒子背景 -->
+    <div class="particles-bg" id="particlesBg"></div>
+    
+    <!-- 主要内容 -->
+    <div class="main-content">
+        <!-- 品牌标识 -->
+        <div class="brand-logo">
+            <i class="fas fa-coffee"></i>
+        </div>
+        
+        <!-- 主标题 -->
+        <h1 class="neon-title">
+            SMART COFFEE
+        </h1>
+        <p class="text-secondary fs-4 mb-4">
+            触摸开始您的智能咖啡之旅
+        </p>
+        
+        <!-- 特色展示 -->
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
                     </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="text-white">
-                        <i class="fas fa-mobile-alt mb-2" style="font-size: 2rem;"></i>
-                        <h5>扫码支付</h5>
-                        <small class="text-white-50">微信支付宝都支持</small>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="text-white">
-                        <i class="fas fa-star mb-2" style="font-size: 2rem;"></i>
-                        <h5>精品咖啡</h5>
-                        <small class="text-white-50">优质豆源现磨现制</small>
-                    </div>
+                    <h5 class="text-primary">快速制作</h5>
+                    <p class="text-secondary small">90秒现磨现制</p>
                 </div>
             </div>
-            
-            <!-- 主要操作按钮 -->
-            <div class="mb-4">
-                <a href="{{ url_for('customer.menu') }}" class="btn btn-light btn-lg px-5 py-3 rounded-pill shadow-lg" style="font-size: 1.5rem; font-weight: 600;">
-                    <i class="fas fa-play me-3"></i>开始点单
-                </a>
+            <div class="col-md-4 mb-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h5 class="text-primary">便捷支付</h5>
+                    <p class="text-secondary small">多种支付方式</p>
+                </div>
             </div>
-            
-            <!-- 设备状态提示 -->
-            <div class="mt-4">
-                <div class="d-flex align-items-center justify-content-center text-white-50">
-                    <span class="status-indicator status-online"></span>
-                    <small>设备运行正常 • 所有饮品可选</small>
+            <div class="col-md-4 mb-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h5 class="text-primary">精品咖啡</h5>
+                    <p class="text-secondary small">优质豆源严选</p>
                 </div>
             </div>
         </div>
+        
+        <!-- 开始按钮 -->
+        <div class="mb-4">
+            <a href="{{ url_for('customer.menu') }}" class="btn start-button touch-feedback">
+                <i class="fas fa-play me-3"></i>
+                开始点单
+            </a>
+        </div>
+        
+        <!-- 扫码再购 -->
+        <div class="qr-section">
+            <h6 class="text-primary mb-3">
+                <i class="fas fa-qrcode me-2"></i>
+                扫码再来一杯
+            </h6>
+            <p class="text-secondary small mb-0">
+                扫描订单二维码，快速重复上次订单
+            </p>
+        </div>
     </div>
-    
-    <!-- 底部信息栏 -->
-    <div class="position-fixed bottom-0 w-100 bg-dark bg-opacity-75 text-white p-2">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-6">
-                    <small class="d-flex align-items-center">
-                        <i class="fas fa-map-marker-alt me-2"></i>
-                        {{ device_info.get('alias', '智能咖啡机') }}
-                    </small>
+</div>
+
+<!-- 底部状态信息 -->
+<div class="bottom-actions">
+    <div class="container-fluid">
+        <div class="row align-items-center text-center">
+            <div class="col-4">
+                <div class="status-indicator">
+                    <div class="status-dot status-online"></div>
+                    <small>{{ device_info.get('alias', '智能咖啡机') }}</small>
                 </div>
-                <div class="col-6 text-end">
-                    <small>
-                        <i class="fas fa-wifi me-1"></i>
-                        在线 • 
-                        <span id="currentTime"></span>
-                    </small>
+            </div>
+            <div class="col-4">
+                <div class="status-indicator">
+                    <i class="fas fa-wifi me-1"></i>
+                    <small>网络正常</small>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="status-indicator">
+                    <i class="fas fa-thermometer-half me-1"></i>
+                    <small>温度正常</small>
                 </div>
             </div>
         </div>
@@ -86,12 +305,14 @@
 </div>
 
 <!-- 屏保遮罩 -->
-<div class="position-fixed top-0 start-0 w-100 h-100 bg-dark d-none" id="screensaver" style="z-index: 9998;">
-    <div class="d-flex align-items-center justify-content-center h-100 text-white">
+<div class="position-fixed top-0 start-0 w-100 h-100 d-none" id="screensaver" style="z-index: 9998; background: var(--bg-darker);">
+    <div class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center">
-            <i class="fas fa-coffee mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
-            <h3 class="mb-2" style="opacity: 0.7;">触摸屏幕开始使用</h3>
-            <div class="spinner-border text-light mt-3" style="opacity: 0.3;"></div>
+            <div class="brand-logo breathe">
+                <i class="fas fa-coffee"></i>
+            </div>
+            <h3 class="text-secondary mb-3">轻触屏幕开始使用</h3>
+            <div class="text-muted small">Smart Coffee Machine</div>
         </div>
     </div>
 </div>
@@ -99,103 +320,61 @@
 
 {% block scripts %}
 <script>
-    // 更新当前时间
-    function updateTime() {
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('zh-CN', { 
-            hour12: false,
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        document.getElementById('currentTime').textContent = timeStr;
+document.addEventListener('DOMContentLoaded', function() {
+    // 创建动态粒子背景
+    function createParticles() {
+        const particlesBg = document.getElementById('particlesBg');
+        const particleCount = 20;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 8 + 's';
+            particle.style.animationDuration = (6 + Math.random() * 4) + 's';
+            particlesBg.appendChild(particle);
+        }
     }
     
-    updateTime();
-    setInterval(updateTime, 60000); // 每分钟更新一次
-    
     // 屏保功能
-    let screensaverTimer = null;
-    const screensaverTimeout = {{ config.SCREENSAVER_TIMEOUT * 1000 }}; // 转换为毫秒
-    const screensaver = document.getElementById('screensaver');
+    let screensaverTimer;
+    const SCREENSAVER_DELAY = 30000; // 30秒
     
     function showScreensaver() {
-        screensaver.classList.remove('d-none');
-        screensaver.style.animation = 'fadeIn 0.5s ease';
+        document.getElementById('screensaver').classList.remove('d-none');
     }
     
     function hideScreensaver() {
-        screensaver.classList.add('d-none');
+        document.getElementById('screensaver').classList.add('d-none');
         resetScreensaverTimer();
     }
     
     function resetScreensaverTimer() {
-        if (screensaverTimer) {
-            clearTimeout(screensaverTimer);
-        }
-        screensaverTimer = setTimeout(showScreensaver, screensaverTimeout);
+        clearTimeout(screensaverTimer);
+        screensaverTimer = setTimeout(showScreensaver, SCREENSAVER_DELAY);
     }
-    
-    // 初始化屏保定时器
-    resetScreensaverTimer();
     
     // 监听用户活动
     ['click', 'touchstart', 'mousemove'].forEach(event => {
-        document.addEventListener(event, function() {
-            if (!screensaver.classList.contains('d-none')) {
-                hideScreensaver();
-            } else {
-                resetScreensaverTimer();
-            }
-        });
+        document.addEventListener(event, hideScreensaver);
     });
     
-    // 屏保点击事件
-    screensaver.addEventListener('click', hideScreensaver);
-    screensaver.addEventListener('touchstart', hideScreensaver);
+    // 初始化
+    createParticles();
+    resetScreensaverTimer();
     
-    // 检查设备状态
-    function checkDeviceStatus() {
-        fetch('/api/device/status')
-            .then(response => response.json())
-            .then(data => {
-                console.log('设备状态:', data);
-                
-                // 如果设备离线或有问题，跳转到停服页面
-                const device = data.device;
-                if (!device || device.status !== 'online') {
-                    window.location.href = '/customer/out_of_service?reason=offline';
-                }
-            })
-            .catch(error => {
-                console.error('检查设备状态失败:', error);
-            });
-    }
-    
-    // 每30秒检查一次设备状态
-    setInterval(checkDeviceStatus, 30000);
-    
-    // CSS动画
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+    // 触控反馈增强
+    document.querySelectorAll('.touch-feedback').forEach(element => {
+        element.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+        });
         
-        .btn-light:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 35px rgba(255,255,255,0.3);
-        }
-        
-        .fas.fa-coffee {
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-    `;
-    document.head.appendChild(style);
+        element.addEventListener('touchend', function() {
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+});
 </script>
 {% endblock %}

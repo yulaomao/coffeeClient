@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}咖啡菜单 - 智能自助咖啡机{% endblock %}
+
+{% block body_class %}fullscreen{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100 p-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('customer.idle') }}" class="btn btn-light btn-lg rounded-pill">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                </div>
+                <div>
+                    <h2 class="text-white mb-0 fw-bold">
+                        <i class="fas fa-coffee me-2"></i>选择您的咖啡
+                    </h2>
+                </div>
+                <div style="width: 120px;"></div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 菜单内容（分类 + 商品） -->
+    <div class="row h-75 overflow-auto">
+        <div class="col-12">
+            {% if categories and categories|length > 0 %}
+                {% for cat in categories %}
+                <div class="mb-4">
+                    <div class="d-flex align-items-center mb-2">
+                        <h4 class="text-white-50 mb-0">{{ cat.name }}</h4>
+                        <div class="flex-fill border-bottom border-secondary ms-3" style="opacity:.3"></div>
+                    </div>
+                    <div class="row g-4">
+                        {% for item in cat['items'] %}
+                        <div class="col-lg-4 col-md-6 col-sm-12">
+                            <div class="card h-100 position-relative item-card {% if not item.available %}opacity-75{% endif %}" 
+                                 data-item-id="{{ item.id }}"
+                                 style="cursor: pointer; transition: all 0.3s ease;">
+                                {% if not item.available %}
+                                <div class="position-absolute top-0 end-0 m-2">
+                                    <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fas fa-ban me-1"></i>售罄</span>
+                                </div>
+                                {% endif %}
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3">
+                                        {% if item.image_url %}
+                                        <img src="{{ item.image_url }}" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;" alt="{{ item.name }}"/>
+                                        {% else %}
+                                        <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                            <i class="fas fa-coffee text-primary" style="font-size: 2.5rem;"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <h4 class="card-title text-dark fw-bold mb-2">{{ item.name }}</h4>
+                                    {% if item.badges and item.badges|length > 0 %}
+                                    <div class="mb-2">
+                                        {% for b in item.badges %}
+                                            <span class="badge rounded-pill bg-warning text-dark me-1">{{ b }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <div class="mb-3">
+                                        <span class="h3 text-primary fw-bold">¥{{ "%.2f"|format(((item.price_cents|default(0))|int)/100) }}</span>
+                                    </div>
+                                    <div class="d-grid">
+                                        {% if item.available %}
+                                        <a href="{{ url_for('customer.product_detail', item_id=item.id) }}" class="btn btn-primary btn-lg rounded-pill">
+                                            <i class="fas fa-plus me-2"></i>立即选购
+                                        </a>
+                                        {% else %}
+                                        <button class="btn btn-outline-secondary btn-lg rounded-pill" data-bs-toggle="modal" data-bs-target="#unavailableModal{{ item.id }}">
+                                            <i class="fas fa-info-circle me-2"></i>查看原因
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 不可售原因弹窗（菜单层暂无详细原因，给出通用提示） -->
+                        {% if not item.available %}
+                        <div class="modal fade" id="unavailableModal{{ item.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content rounded-3">
+                                    <div class="modal-header border-0">
+                                        <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>暂不可售</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="mb-0">当前不在可售时间范围或已下架。</p>
+                                    </div>
+                                    <div class="modal-footer border-0">
+                                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">知道了</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="text-center text-white">
+                <i class="fas fa-coffee-togo mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
+                <h3 class="mb-3">暂无可用商品</h3>
+                <p class="text-white-50">请稍后再来或联系工作人员</p>
+                <a href="{{ url_for('customer.idle') }}" class="btn btn-light btn-lg rounded-pill mt-3"><i class="fas fa-home me-2"></i>返回首页</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- 底部提示 -->
+    <div class="position-fixed bottom-0 w-100 bg-dark bg-opacity-75 text-white p-2">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <small>
+                        <i class="fas fa-info-circle me-2"></i>
+                        点击商品查看详情
+                    </small>
+                </div>
+                <div class="col-6 text-end">
+                    <small id="menuStatus" data-total-count="{{ total_count|default(0) }}">共 {{ total_count|default(0) }} 款咖啡，{{ available_count|default(0) }} 款可选</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 实时更新菜单状态
+    function updateMenuStatus() {
+        fetch('/api/v1/devices/{{ device_id }}/menu/available')
+            .then(r => r.json())
+            .then(payload => {
+                if (!payload || !payload.ok) return;
+                const avail = new Set(payload.data || []);
+                // 更新卡片灰显
+                document.querySelectorAll('.item-card').forEach(card => {
+                    const id = card.getAttribute('data-item-id');
+                    const isAvail = avail.has(id);
+                    card.classList.toggle('opacity-75', !isAvail);
+                });
+                // 更新底部状态显示
+                const statusElement = document.getElementById('menuStatus');
+                const total = parseInt(statusElement?.dataset?.totalCount || '0');
+                if (statusElement) {
+                    statusElement.innerHTML = `共 ${total} 款咖啡，${avail.size} 款可选`;
+                }
+            })
+            .catch(err => console.error('更新菜单状态失败:', err));
+    }
+    
+    // 每10秒更新一次菜单状态
+    setInterval(updateMenuStatus, 10000);
+    
+    // SSE事件监听
+    const eventSource = new EventSource('/events');
+    
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        console.log('收到事件:', data);
+        
+        // 物料更新事件
+        if (data.type === 'material_update') {
+            updateMenuStatus();
+        }
+        // 菜单更新事件
+        if (data.type === 'menu_update') {
+            updateMenuStatus();
+        }
+        
+        // 网络状态事件
+        if (data.type === 'net_status') {
+            if (!data.online) {
+                window.location.href = '/customer/out_of_service?reason=network';
+            }
+        }
+    };
+    
+    eventSource.onerror = function(event) {
+        console.error('SSE连接错误:', event);
+        // 可以显示网络连接问题提示
+    };
+    
+    // 页面卸载时关闭SSE连接
+    window.addEventListener('beforeunload', function() {
+        eventSource.close();
+    });
+    
+    // 商品卡片悬停效果
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('opacity-75')) {
+                this.style.transform = 'translateY(-8px) scale(1.02)';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+    
+    // 触控反馈
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('touchstart', function() {
+            this.style.transform = 'scale(0.95)';
+        });
+        
+        btn.addEventListener('touchend', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+</script>
+{% endblock %}

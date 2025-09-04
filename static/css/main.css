@@ -1,27 +1,110 @@
-/* 智能咖啡机主样式文件 */
+/* 智能咖啡机 - Glassmorphism & Neon 设计系统 */
 
-/* 全局变量 */
+/* CSS设计令牌 */
 :root {
-    --primary-color: #007bff;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-    --light-color: #f8f9fa;
-    --dark-color: #343a40;
+    /* 科技感配色系统 */
+    --neon-cyan: #00FFC6;
+    --neon-blue: #00D1FF;
+    --neon-amber: #FFB020;
+    --neon-purple: #B347D9;
+    --neon-pink: #FF69B4;
     
+    /* 深色主题基础色 */
+    --bg-dark: #0a0f1a;
+    --bg-darker: #050812;
+    --surface-dark: #1a1f2e;
+    --surface-light: #2a2f3e;
+    
+    /* 玻璃拟态效果 */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-bg-hover: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: rgba(0, 0, 0, 0.3);
+    
+    /* 文字颜色 */
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-inverse: #0a0f1a;
+    
+    /* 状态色彩 */
+    --success-glow: #00ff88;
+    --warning-glow: #ffaa00;
+    --danger-glow: #ff4757;
+    --info-glow: var(--neon-blue);
+    
+    /* 尺寸系统 */
+    --touch-min: 56px;
+    --touch-comfortable: 72px;
+    --touch-large: 88px;
+    
+    /* 字体系统 */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+    
+    /* 边框半径 */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-2xl: 32px;
+    --radius-full: 9999px;
+    
+    /* 模糊效果 */
+    --blur-sm: 4px;
+    --blur-md: 8px;
+    --blur-lg: 16px;
+    --blur-xl: 24px;
+    
+    /* 阴影系统 */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.25);
+    --shadow-neon: 0 0 20px currentColor;
+    --shadow-glow: 0 0 40px currentColor;
+    
+    /* 过渡动画 */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Z-index层级 */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-toast: 1080;
+    
+    /* 兼容旧版变量 */
+    --primary-color: var(--neon-cyan);
+    --secondary-color: var(--text-secondary);
+    --success-color: var(--success-glow);
+    --danger-color: var(--danger-glow);
+    --warning-color: var(--warning-glow);
+    --info-color: var(--info-glow);
+    --light-color: var(--text-primary);
+    --dark-color: var(--bg-dark);
     --coffee-brown: #8B4513;
     --coffee-light: #D2691E;
     --cream-color: #F5F5DC;
-    
-    --border-radius: 12px;
-    --border-radius-lg: 20px;
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --box-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
-    
-    --transition: all 0.3s ease;
-    --transition-fast: all 0.15s ease;
+    --border-radius: var(--radius-md);
+    --border-radius-lg: var(--radius-xl);
+    --box-shadow: var(--shadow-md);
+    --box-shadow-lg: var(--shadow-lg);
+    --transition: var(--transition-normal);
+    --transition-fast: var(--transition-fast);
 }
 
 /* 基础重置和优化 */
@@ -29,15 +112,49 @@
     box-sizing: border-box;
 }
 
+/* 全局基础样式 */
 body {
-    font-family: 'Microsoft YaHei', 'Segoe UI', Roboto, Arial, sans-serif;
+    font-family: 'SF Pro Display', 'Helvetica Neue', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.6;
-    color: var(--dark-color);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: var(--text-primary);
+    background: var(--bg-dark);
     margin: 0;
     padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    
+    /* 动态科技背景 */
+    background-image: 
+        radial-gradient(circle at 20% 80%, rgba(0, 255, 198, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 209, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 176, 32, 0.05) 0%, transparent 50%),
+        linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-darker) 50%, var(--surface-dark) 100%);
+    background-size: 100% 100%;
+    background-attachment: fixed;
+}
+
+/* 动态网格背景 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    z-index: -1;
+    animation: grid-flow 20s linear infinite;
+}
+
+@keyframes grid-flow {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(50px, 50px); }
 }
 
 /* 触控优化 */
@@ -129,6 +246,327 @@ body {
     border-radius: 10px;
     overflow: hidden;
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ==================== GLASSMORPHISM 组件系统 ==================== */
+
+/* 玻璃拟态基础类 */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-lg));
+    -webkit-backdrop-filter: blur(var(--blur-lg));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-lg);
+}
+
+.glass-hover {
+    transition: var(--transition-normal);
+}
+
+.glass-hover:hover {
+    background: var(--glass-bg-hover);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* 霓虹发光效果 */
+.neon-border {
+    border: 1px solid currentColor;
+    box-shadow: 
+        0 0 5px currentColor,
+        inset 0 0 5px currentColor;
+}
+
+.neon-glow {
+    box-shadow: var(--shadow-neon);
+}
+
+.neon-glow-intense {
+    box-shadow: var(--shadow-glow);
+}
+
+/* 霓虹流动边框动画 */
+.neon-flow {
+    position: relative;
+    background: var(--glass-bg);
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+
+.neon-flow::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue), var(--neon-purple), var(--neon-cyan));
+    background-size: 400% 400%;
+    border-radius: inherit;
+    z-index: -1;
+    animation: neon-flow 3s ease-in-out infinite;
+}
+
+@keyframes neon-flow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* 科技感按钮系统 */
+.btn-cyber {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-md));
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-height: var(--touch-comfortable);
+    padding: 0 24px;
+    border-radius: var(--radius-md);
+    transition: var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-cyber:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0, 255, 198, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn-cyber:active {
+    transform: translateY(0);
+}
+
+.btn-cyber-primary {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+}
+
+.btn-cyber-primary:hover {
+    background: rgba(0, 255, 198, 0.1);
+    box-shadow: 0 0 30px rgba(0, 255, 198, 0.4);
+}
+
+.btn-cyber-large {
+    min-height: var(--touch-large);
+    padding: 0 32px;
+    font-size: var(--font-size-lg);
+}
+
+/* 产品卡片系统 */
+.product-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-lg));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    padding: 24px;
+    transition: var(--transition-normal);
+    position: relative;
+    min-height: var(--touch-large);
+    cursor: pointer;
+}
+
+.product-card:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--neon-cyan);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        var(--shadow-xl),
+        0 0 30px rgba(0, 255, 198, 0.2);
+}
+
+.product-card.unavailable {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.product-card.unavailable::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-sm));
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+/* 选项芯片 */
+.option-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: var(--transition-fast);
+    cursor: pointer;
+    min-height: var(--touch-min);
+}
+
+.option-chip:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+}
+
+.option-chip.selected {
+    background: rgba(0, 255, 198, 0.1);
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 255, 198, 0.3);
+}
+
+.option-chip.selected:hover {
+    background: rgba(0, 255, 198, 0.15);
+}
+
+/* 状态指示器 */
+.status-bar {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-md));
+    border-bottom: 1px solid var(--glass-border);
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.status-dot::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: inherit;
+    animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+    0% { transform: scale(1); opacity: 1; }
+    70% { transform: scale(1.4); opacity: 0; }
+    100% { transform: scale(1.4); opacity: 0; }
+}
+
+.status-online { background-color: var(--success-glow); }
+.status-warning { background-color: var(--warning-glow); }
+.status-error { background-color: var(--danger-glow); }
+.status-info { background-color: var(--info-glow); }
+
+/* 进度环 */
+.progress-ring {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.progress-ring-circle {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transition: stroke-dasharray var(--transition-slow);
+}
+
+.progress-ring-bg {
+    stroke: rgba(255, 255, 255, 0.1);
+}
+
+.progress-ring-progress {
+    stroke: var(--neon-cyan);
+    filter: drop-shadow(0 0 6px var(--neon-cyan));
+    stroke-dasharray: 0 283;
+}
+
+.progress-ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* 模态框和抽屉 */
+.modal-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-xl));
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+}
+
+.drawer-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--blur-lg));
+    border-top: 1px solid var(--glass-border);
+}
+
+/* 触控反馈增强 */
+.touch-feedback {
+    transition: var(--transition-fast);
+}
+
+.touch-feedback:active {
+    transform: scale(0.95);
+}
+
+.touch-feedback:hover {
+    transform: scale(1.02);
+}
+
+/* 响应式动效降级 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .glass,
+    .product-card,
+    .btn-cyber,
+    .option-chip {
+        transform: none !important;
+    }
+}
+
+/* 无障碍增强 */
+@media (prefers-contrast: high) {
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.2);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --text-secondary: rgba(255, 255, 255, 0.9);
+    }
 }
 
 .progress-bar {
