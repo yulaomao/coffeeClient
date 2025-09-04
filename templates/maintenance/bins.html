@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}料盒管理 - 运维管理{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('maintenance.home') }}" class="btn btn-outline-light me-3">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                    <h2 class="text-white mb-0 fw-bold d-inline">
+                        <i class="fas fa-flask me-2"></i>料盒管理
+                    </h2>
+                </div>
+                <div>
+                    <button class="btn btn-success" onclick="refillAllBins()">
+                        <i class="fas fa-fill me-2"></i>全部补满
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 料盒概览 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-cube text-primary mb-2" style="font-size: 2rem;"></i>
+                    <h4 class="mb-1">{{ bins|length }}</h4>
+                    <small class="text-muted">总料盒数</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                    <h4 class="mb-1">{{ normal_bins|length }}</h4>
+                    <small class="text-muted">正常料盒</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h4 class="mb-1">{{ low_bins|length }}</h4>
+                    <small class="text-muted">低量料盒</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-times-circle text-danger mb-2" style="font-size: 2rem;"></i>
+                    <h4 class="mb-1">{{ empty_bins|length }}</h4>
+                    <small class="text-muted">空料盒</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 料盒详情 -->
+    <div class="row">
+        {% for bin_index, bin_info in bins.items() %}
+        {% set remaining_pct = (bin_info.remaining|float / bin_info.capacity|float * 100) %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cube me-2"></i>料盒 #{{ bin_index }}
+                    </h6>
+                    {% if remaining_pct < bin_info.threshold_low_pct|float %}
+                        <span class="badge bg-danger">低量</span>
+                    {% elif remaining_pct < 50 %}
+                        <span class="badge bg-warning">中量</span>
+                    {% else %}
+                        <span class="badge bg-success">充足</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- 物料信息 -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if bin_info.material_code == 'BEAN_A' %}
+                                <i class="fas fa-seedling text-brown" style="font-size: 2rem;"></i>
+                            {% elif bin_info.material_code == 'MILK_POWDER' %}
+                                <i class="fas fa-glass-milk text-primary" style="font-size: 2rem;"></i>
+                            {% elif bin_info.material_code == 'SUGAR' %}
+                                <i class="fas fa-cube text-warning" style="font-size: 2rem;"></i>
+                            {% elif bin_info.material_code == 'WATER' %}
+                                <i class="fas fa-tint text-info" style="font-size: 2rem;"></i>
+                            {% else %}
+                                <i class="fas fa-box text-secondary" style="font-size: 2rem;"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">
+                                {% if bin_info.material_code == 'BEAN_A' %}咖啡豆 (A级)
+                                {% elif bin_info.material_code == 'MILK_POWDER' %}奶粉
+                                {% elif bin_info.material_code == 'SUGAR' %}糖
+                                {% elif bin_info.material_code == 'WATER' %}水
+                                {% else %}{{ bin_info.material_code }}
+                                {% endif %}
+                            </h6>
+                            <small class="text-muted">单位: {{ bin_info.unit }}</small>
+                        </div>
+                    </div>
+                    
+                    <!-- 容量进度条 -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small">容量使用</span>
+                            <span class="small">{{ "%.1f"|format(remaining_pct) }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            {% if remaining_pct < bin_info.threshold_low_pct|float %}
+                                <div class="progress-bar bg-danger" style="width: {{ remaining_pct }}%"></div>
+                            {% elif remaining_pct < 50 %}
+                                <div class="progress-bar bg-warning" style="width: {{ remaining_pct }}%"></div>
+                            {% else %}
+                                <div class="progress-bar bg-success" style="width: {{ remaining_pct }}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- 数量信息 -->
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="h6 text-primary mb-0">{{ bin_info.remaining }}</div>
+                            <small class="text-muted">剩余</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h6 text-secondary mb-0">{{ bin_info.capacity }}</div>
+                            <small class="text-muted">容量</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h6 text-warning mb-0">{{ bin_info.threshold_low_pct|int }}%</div>
+                            <small class="text-muted">警戒值</small>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button class="btn btn-primary btn-sm w-100" onclick="refillBin('{{ bin_index }}')">
+                                <i class="fas fa-fill me-1"></i>补充
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-outline-secondary btn-sm w-100" onclick="editBin('{{ bin_index }}')">
+                                <i class="fas fa-edit me-1"></i>编辑
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 最后更新时间 -->
+                    <div class="mt-2 text-center">
+                        <small class="text-muted">
+                            最后更新: {{ moment(bin_info.last_updated_ts).fromNow() if bin_info.last_updated_ts else '未知' }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 编辑料盒模态窗口 -->
+<div class="modal fade" id="editBinModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>编辑料盒
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBinForm">
+                    <input type="hidden" id="editBinIndex">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">料盒编号</label>
+                            <input type="text" class="form-control" id="editBinId" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">物料类型</label>
+                            <select class="form-select" id="editMaterialCode">
+                                <option value="BEAN_A">咖啡豆 (A级)</option>
+                                <option value="MILK_POWDER">奶粉</option>
+                                <option value="SUGAR">糖</option>
+                                <option value="WATER">水</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">当前剩余</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editRemaining" min="0" step="0.1">
+                                <span class="input-group-text" id="editUnit">g</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">总容量</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editCapacity" min="1" step="0.1">
+                                <span class="input-group-text" id="editUnit2">g</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">警戒百分比</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editThreshold" min="1" max="99" value="20">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">单位</label>
+                            <input type="text" class="form-control" id="editUnitText" maxlength="10">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="saveBinEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 补充确认模态窗口 -->
+<div class="modal fade" id="refillModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-fill me-2"></i>补充料盒
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    确定要将此料盒补充到满容量吗？
+                </div>
+                <div id="refillInfo" class="text-center">
+                    <!-- 补充信息将在这里显示 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-success" id="confirmRefillBtn">确定补充</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentBinIndex = null;
+
+// 编辑料盒
+function editBin(binIndex) {
+    currentBinIndex = binIndex;
+    
+    // 获取料盒信息
+    fetch(`/api/device/bins/${binIndex}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const binInfo = data.bin;
+                
+                // 填充表单
+                document.getElementById('editBinIndex').value = binIndex;
+                document.getElementById('editBinId').value = `#${binIndex}`;
+                document.getElementById('editMaterialCode').value = binInfo.material_code;
+                document.getElementById('editRemaining').value = binInfo.remaining;
+                document.getElementById('editCapacity').value = binInfo.capacity;
+                document.getElementById('editThreshold').value = binInfo.threshold_low_pct;
+                document.getElementById('editUnitText').value = binInfo.unit;
+                
+                // 更新单位显示
+                const unitSpans = document.querySelectorAll('#editUnit, #editUnit2');
+                unitSpans.forEach(span => span.textContent = binInfo.unit);
+                
+                // 显示模态窗口
+                const modal = new bootstrap.Modal(document.getElementById('editBinModal'));
+                modal.show();
+            } else {
+                CoffeeMachine.showToast(data.message || '获取料盒信息失败', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('获取料盒信息失败:', error);
+            CoffeeMachine.showToast('获取料盒信息失败', 'error');
+        });
+}
+
+// 保存料盒编辑
+function saveBinEdit() {
+    const binIndex = document.getElementById('editBinIndex').value;
+    const formData = {
+        material_code: document.getElementById('editMaterialCode').value,
+        remaining: parseFloat(document.getElementById('editRemaining').value),
+        capacity: parseFloat(document.getElementById('editCapacity').value),
+        threshold_low_pct: parseFloat(document.getElementById('editThreshold').value),
+        unit: document.getElementById('editUnitText').value
+    };
+    
+    // 验证数据
+    if (formData.remaining > formData.capacity) {
+        CoffeeMachine.showToast('剩余量不能大于总容量', 'error');
+        return;
+    }
+    
+    if (formData.threshold_low_pct < 1 || formData.threshold_low_pct > 99) {
+        CoffeeMachine.showToast('警戒百分比必须在1-99之间', 'error');
+        return;
+    }
+    
+    // 发送更新请求
+    fetch(`/api/device/bins/${binIndex}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+            
+            // 关闭模态窗口
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editBinModal'));
+            modal.hide();
+            
+            // 刷新页面
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            CoffeeMachine.showToast(data.message || '保存失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('保存料盒信息失败:', error);
+        CoffeeMachine.showToast('保存失败，请稍后再试', 'error');
+    });
+}
+
+// 补充单个料盒
+function refillBin(binIndex) {
+    // 获取料盒信息用于显示
+    fetch(`/api/device/bins/${binIndex}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const binInfo = data.bin;
+                const currentPct = (binInfo.remaining / binInfo.capacity * 100).toFixed(1);
+                const needAmount = (binInfo.capacity - binInfo.remaining).toFixed(1);
+                
+                document.getElementById('refillInfo').innerHTML = `
+                    <div class="row text-center">
+                        <div class="col-12 mb-3">
+                            <h6>料盒 #${binIndex}</h6>
+                            <p class="text-muted mb-1">
+                                ${binInfo.material_code === 'BEAN_A' ? '咖啡豆' : 
+                                  binInfo.material_code === 'MILK_POWDER' ? '奶粉' :
+                                  binInfo.material_code === 'SUGAR' ? '糖' :
+                                  binInfo.material_code === 'WATER' ? '水' : binInfo.material_code}
+                            </p>
+                        </div>
+                        <div class="col-4">
+                            <div class="h6 text-primary">${binInfo.remaining} ${binInfo.unit}</div>
+                            <small class="text-muted">当前剩余</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h6 text-success">${needAmount} ${binInfo.unit}</div>
+                            <small class="text-muted">需要补充</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h6 text-info">${binInfo.capacity} ${binInfo.unit}</div>
+                            <small class="text-muted">补充后</small>
+                        </div>
+                    </div>
+                `;
+                
+                // 设置确认按钮事件
+                document.getElementById('confirmRefillBtn').onclick = () => performRefill(binIndex);
+                
+                // 显示确认模态窗口
+                const modal = new bootstrap.Modal(document.getElementById('refillModal'));
+                modal.show();
+            } else {
+                CoffeeMachine.showToast(data.message || '获取料盒信息失败', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('获取料盒信息失败:', error);
+            CoffeeMachine.showToast('获取料盒信息失败', 'error');
+        });
+}
+
+// 执行补充操作
+function performRefill(binIndex) {
+    fetch(`/api/device/bins/${binIndex}/refill`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+            
+            // 关闭模态窗口
+            const modal = bootstrap.Modal.getInstance(document.getElementById('refillModal'));
+            modal.hide();
+            
+            // 刷新页面
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            CoffeeMachine.showToast(data.message || '补充失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('补充料盒失败:', error);
+        CoffeeMachine.showToast('补充失败，请稍后再试', 'error');
+    });
+}
+
+// 补充所有料盒
+function refillAllBins() {
+    if (!confirm('确定要将所有料盒都补充到满容量吗？')) {
+        return;
+    }
+    
+    CoffeeMachine.showToast('正在补充所有料盒...', 'info');
+    
+    fetch('/api/device/bins/refill-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+            setTimeout(() => window.location.reload(), 1500);
+        } else {
+            CoffeeMachine.showToast(data.message || '补充失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('补充所有料盒失败:', error);
+        CoffeeMachine.showToast('补充失败，请稍后再试', 'error');
+    });
+}
+
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听 SSE 事件以获取实时的物料更新
+    document.addEventListener('coffeeEvent', function(event) {
+        const data = event.detail;
+        
+        if (data.type === 'material_update') {
+            console.log('料盒状态更新:', data);
+            // 可以实时更新单个料盒的显示，避免整页刷新
+            // 这里简化处理，显示通知即可
+            CoffeeMachine.showToast(`料盒 #${data.bin_index} 状态已更新`, 'info');
+        }
+    });
+    
+    // 更新物料类型选择时的单位显示
+    document.getElementById('editMaterialCode').addEventListener('change', function() {
+        const materialCode = this.value;
+        const units = {
+            'BEAN_A': 'g',
+            'MILK_POWDER': 'g', 
+            'SUGAR': 'g',
+            'WATER': 'ml'
+        };
+        
+        const unit = units[materialCode] || 'g';
+        document.getElementById('editUnitText').value = unit;
+        document.querySelectorAll('#editUnit, #editUnit2').forEach(span => {
+            span.textContent = unit;
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,668 @@
+{% extends "base.html" %}
+
+{% block title %}系统设置 - 运维管理{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('maintenance.home') }}" class="btn btn-outline-light me-3">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                    <h2 class="text-white mb-0 fw-bold d-inline">
+                        <i class="fas fa-cog me-2"></i>系统设置
+                    </h2>
+                </div>
+                <div>
+                    <button class="btn btn-success" onclick="saveAllSettings()">
+                        <i class="fas fa-save me-2"></i>保存所有设置
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 设置选项卡 -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-pills mb-4" id="settingsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="device-tab" data-bs-toggle="pill" data-bs-target="#device" type="button" role="tab">
+                        <i class="fas fa-server me-2"></i>设备设置
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="network-tab" data-bs-toggle="pill" data-bs-target="#network" type="button" role="tab">
+                        <i class="fas fa-wifi me-2"></i>网络设置
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="business-tab" data-bs-toggle="pill" data-bs-target="#business" type="button" role="tab">
+                        <i class="fas fa-store me-2"></i>业务设置
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="hardware-tab" data-bs-toggle="pill" data-bs-target="#hardware" type="button" role="tab">
+                        <i class="fas fa-microchip me-2"></i>硬件设置
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="maintenance-tab" data-bs-toggle="pill" data-bs-target="#maintenance" type="button" role="tab">
+                        <i class="fas fa-tools me-2"></i>维护设置
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="settingsTabContent">
+                <!-- 设备设置 -->
+                <div class="tab-pane fade show active" id="device" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-server me-2"></i>设备基础设置
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="deviceSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">设备ID</label>
+                                            <input type="text" class="form-control" id="deviceId" value="{{ device_info.device_id }}" readonly>
+                                            <small class="form-text text-muted">设备唯一标识符，不可修改</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">设备名称</label>
+                                            <input type="text" class="form-control" id="deviceName" value="{{ device_settings.device_name or device_info.device_id }}" maxlength="50">
+                                            <small class="form-text text-muted">显示在用户界面的设备名称</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">设备位置</label>
+                                            <input type="text" class="form-control" id="deviceLocation" value="{{ device_settings.location or '' }}" maxlength="100">
+                                            <small class="form-text text-muted">设备安装位置描述</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">时区设置</label>
+                                            <select class="form-select" id="timezone">
+                                                <option value="Asia/Shanghai" {{ 'selected' if device_settings.timezone == 'Asia/Shanghai' else '' }}>北京时间 (UTC+8)</option>
+                                                <option value="Asia/Tokyo" {{ 'selected' if device_settings.timezone == 'Asia/Tokyo' else '' }}>东京时间 (UTC+9)</option>
+                                                <option value="America/New_York" {{ 'selected' if device_settings.timezone == 'America/New_York' else '' }}>纽约时间 (UTC-5)</option>
+                                                <option value="Europe/London" {{ 'selected' if device_settings.timezone == 'Europe/London' else '' }}>伦敦时间 (UTC+0)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">温度报警阈值 (°C)</label>
+                                            <input type="number" class="form-control" id="tempThreshold" value="{{ device_settings.temp_threshold_celsius or 85 }}" min="50" max="100">
+                                            <small class="form-text text-muted">设备温度超过此值时发出警报</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">心跳间隔 (秒)</label>
+                                            <input type="number" class="form-control" id="heartbeatInterval" value="{{ device_settings.heartbeat_interval_sec or 30 }}" min="10" max="300">
+                                            <small class="form-text text-muted">设备向服务器发送心跳的时间间隔</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 网络设置 -->
+                <div class="tab-pane fade" id="network" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-wifi me-2"></i>网络配置
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="networkSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">WiFi SSID</label>
+                                            <input type="text" class="form-control" id="wifiSsid" value="{{ network_settings.wifi_ssid or '' }}">
+                                            <small class="form-text text-muted">WiFi网络名称</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">WiFi密码</label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="wifiPassword" value="{{ network_settings.wifi_password or '' }}">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('wifiPassword')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">服务器地址</label>
+                                            <input type="text" class="form-control" id="serverUrl" value="{{ network_settings.server_url or '' }}">
+                                            <small class="form-text text-muted">云端服务器API地址</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">API密钥</label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="apiKey" value="{{ network_settings.api_key or '' }}">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('apiKey')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">连接超时 (秒)</label>
+                                            <input type="number" class="form-control" id="connectionTimeout" value="{{ network_settings.connection_timeout_sec or 30 }}" min="5" max="120">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">重试次数</label>
+                                            <input type="number" class="form-control" id="retryCount" value="{{ network_settings.retry_count or 3 }}" min="1" max="10">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="button" class="btn btn-primary me-2" onclick="testNetworkConnection()">
+                                            <i class="fas fa-plug me-1"></i>测试连接
+                                        </button>
+                                        <div id="networkTestResult" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 业务设置 -->
+                <div class="tab-pane fade" id="business" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-store me-2"></i>业务配置
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="businessSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">营业开始时间</label>
+                                            <input type="time" class="form-control" id="businessStartTime" value="{{ business_settings.start_time or '06:00' }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">营业结束时间</label>
+                                            <input type="time" class="form-control" id="businessEndTime" value="{{ business_settings.end_time or '22:00' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">默认制作温度 (°C)</label>
+                                            <input type="number" class="form-control" id="brewTemperature" value="{{ business_settings.brew_temp_celsius or 85 }}" min="70" max="95">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">默认制作时间 (秒)</label>
+                                            <input type="number" class="form-control" id="brewTime" value="{{ business_settings.brew_time_sec or 30 }}" min="15" max="180">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">支付超时 (分钟)</label>
+                                            <input type="number" class="form-control" id="paymentTimeout" value="{{ business_settings.payment_timeout_min or 5 }}" min="1" max="30">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">取餐超时 (分钟)</label>
+                                            <input type="number" class="form-control" id="pickupTimeout" value="{{ business_settings.pickup_timeout_min or 15 }}" min="5" max="60">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="allowRefunds" {{ 'checked' if business_settings.allow_refunds else '' }}>
+                                        <label class="form-check-label" for="allowRefunds">
+                                            允许自动退款
+                                        </label>
+                                        <small class="form-text text-muted d-block">制作失败时是否自动退款给用户</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="maintenanceMode" {{ 'checked' if business_settings.maintenance_mode else '' }}>
+                                        <label class="form-check-label" for="maintenanceMode">
+                                            维护模式
+                                        </label>
+                                        <small class="form-text text-muted d-block">开启后设备将停止接受新订单</small>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 硬件设置 -->
+                <div class="tab-pane fade" id="hardware" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-microchip me-2"></i>硬件校准
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="hardwareSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">研磨电机转速 (RPM)</label>
+                                            <input type="number" class="form-control" id="grinderSpeed" value="{{ hardware_settings.grinder_speed_rpm or 1200 }}" min="800" max="2000">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">水泵压力 (Bar)</label>
+                                            <input type="number" class="form-control" id="pumpPressure" value="{{ hardware_settings.pump_pressure_bar or 9 }}" min="6" max="15" step="0.1">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">温度传感器偏移 (°C)</label>
+                                            <input type="number" class="form-control" id="tempSensorOffset" value="{{ hardware_settings.temp_sensor_offset_celsius or 0 }}" min="-10" max="10" step="0.1">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">压力传感器偏移 (Bar)</label>
+                                            <input type="number" class="form-control" id="pressureSensorOffset" value="{{ hardware_settings.pressure_sensor_offset_bar or 0 }}" min="-2" max="2" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-3">校准操作</h6>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <button type="button" class="btn btn-outline-primary" onclick="calibrateComponent('temperature')">
+                                                <i class="fas fa-thermometer-half me-1"></i>温度校准
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="calibrateComponent('pressure')">
+                                                <i class="fas fa-weight me-1"></i>压力校准
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" onclick="calibrateComponent('grinder')">
+                                                <i class="fas fa-cog me-1"></i>研磨校准
+                                            </button>
+                                            <button type="button" class="btn btn-outline-warning" onclick="calibrateComponent('pump')">
+                                                <i class="fas fa-pump-medical me-1"></i>水泵校准
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 维护设置 -->
+                <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-tools me-2"></i>维护配置
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="maintenanceSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">维护PIN码</label>
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="maintenancePin" maxlength="6" placeholder="6位数字PIN码">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="generateRandomPin()">
+                                                    <i class="fas fa-dice me-1"></i>随机生成
+                                                </button>
+                                            </div>
+                                            <small class="form-text text-muted">留空表示不修改</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">自动维护间隔 (天)</label>
+                                            <input type="number" class="form-control" id="autoMaintenanceInterval" value="{{ maintenance_settings.auto_maintenance_days or 7 }}" min="1" max="30">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">清洗提醒阈值 (杯)</label>
+                                            <input type="number" class="form-control" id="cleaningThreshold" value="{{ maintenance_settings.cleaning_reminder_cups or 100 }}" min="10" max="500">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">除垢提醒阈值 (杯)</label>
+                                            <input type="number" class="form-control" id="descaleThreshold" value="{{ maintenance_settings.descale_reminder_cups or 1000 }}" min="100" max="5000">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="autoCleaningEnabled" {{ 'checked' if maintenance_settings.auto_cleaning_enabled else '' }}>
+                                        <label class="form-check-label" for="autoCleaningEnabled">
+                                            启用自动清洗
+                                        </label>
+                                        <small class="form-text text-muted d-block">达到阈值时自动执行清洗程序</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="lowMaterialAlert" {{ 'checked' if maintenance_settings.low_material_alert else '' }}>
+                                        <label class="form-check-label" for="lowMaterialAlert">
+                                            物料低量警报
+                                        </label>
+                                        <small class="form-text text-muted d-block">物料不足时发送警报通知</small>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化表单验证
+    setupFormValidation();
+});
+
+// 设置表单验证
+function setupFormValidation() {
+    // 为所有数字输入框添加验证
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    numberInputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateNumberInput(this);
+        });
+    });
+    
+    // PIN码验证
+    document.getElementById('maintenancePin').addEventListener('input', function() {
+        validatePinInput(this);
+    });
+}
+
+// 验证数字输入
+function validateNumberInput(input) {
+    const value = parseFloat(input.value);
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    
+    if (value < min || value > max) {
+        input.classList.add('is-invalid');
+        CoffeeMachine.showToast(`${input.previousElementSibling.textContent}超出有效范围 (${min}-${max})`, 'error');
+    } else {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+    }
+}
+
+// 验证PIN码输入
+function validatePinInput(input) {
+    const value = input.value;
+    const isValid = /^\d{6}$/.test(value) || value === '';
+    
+    if (isValid) {
+        input.classList.remove('is-invalid');
+        input.classList.add('is-valid');
+    } else {
+        input.classList.add('is-invalid');
+    }
+}
+
+// 切换密码可见性
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const button = input.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// 生成随机PIN码
+function generateRandomPin() {
+    const pin = Math.floor(Math.random() * 900000) + 100000; // 6位随机数
+    document.getElementById('maintenancePin').value = pin.toString();
+    CoffeeMachine.showToast('已生成随机PIN码', 'success');
+}
+
+// 测试网络连接
+function testNetworkConnection() {
+    const resultDiv = document.getElementById('networkTestResult');
+    const serverUrl = document.getElementById('serverUrl').value;
+    const apiKey = document.getElementById('apiKey').value;
+    
+    if (!serverUrl) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">请先设置服务器地址</div>';
+        return;
+    }
+    
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin me-2"></i>正在测试网络连接...</div>';
+    
+    fetch('/maintenance/test-network', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            server_url: serverUrl,
+            api_key: apiKey
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>网络连接测试成功
+                    <br><small>延迟: ${data.latency_ms}ms | 服务器: ${data.server_version}</small>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-times-circle me-2"></i>网络连接测试失败: ${data.message}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('网络测试失败:', error);
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>网络连接测试失败: 请检查网络设置</div>';
+    });
+}
+
+// 校准硬件组件
+function calibrateComponent(component) {
+    const componentNames = {
+        'temperature': '温度传感器',
+        'pressure': '压力传感器',
+        'grinder': '研磨电机',
+        'pump': '水泵'
+    };
+    
+    const componentName = componentNames[component];
+    
+    if (!confirm(`确定要校准${componentName}吗？此过程可能需要几分钟。`)) {
+        return;
+    }
+    
+    CoffeeMachine.showToast(`正在校准${componentName}...`, 'info');
+    
+    fetch('/maintenance/calibrate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            component: component
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(`${componentName}校准成功`, 'success');
+        } else {
+            CoffeeMachine.showToast(`${componentName}校准失败: ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('校准失败:', error);
+        CoffeeMachine.showToast(`${componentName}校准失败，请稍后再试`, 'error');
+    });
+}
+
+// 保存单个设置组
+function saveSettingsGroup(groupName) {
+    const formId = `${groupName}SettingsForm`;
+    const form = document.getElementById(formId);
+    
+    if (!form) {
+        console.error('找不到表单:', formId);
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const settings = {};
+    
+    // 转换表单数据
+    for (let [key, value] of formData.entries()) {
+        settings[key] = value;
+    }
+    
+    // 处理复选框
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        settings[checkbox.id] = checkbox.checked;
+    });
+    
+    return fetch('/maintenance/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            group: groupName,
+            settings: settings
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(`${groupName}设置保存成功`, 'success');
+        } else {
+            throw new Error(data.message || '保存失败');
+        }
+    })
+    .catch(error => {
+        console.error('保存设置失败:', error);
+        CoffeeMachine.showToast(`${groupName}设置保存失败: ${error.message}`, 'error');
+        throw error;
+    });
+}
+
+// 保存所有设置
+function saveAllSettings() {
+    CoffeeMachine.showToast('正在保存所有设置...', 'info');
+    
+    const settingsGroups = ['device', 'network', 'business', 'hardware', 'maintenance'];
+    const promises = settingsGroups.map(group => saveSettingsGroup(group));
+    
+    Promise.allSettled(promises)
+        .then(results => {
+            const succeeded = results.filter(r => r.status === 'fulfilled').length;
+            const failed = results.filter(r => r.status === 'rejected').length;
+            
+            if (failed === 0) {
+                CoffeeMachine.showToast('所有设置保存成功！', 'success');
+            } else if (succeeded > 0) {
+                CoffeeMachine.showToast(`部分设置保存成功 (${succeeded}/${settingsGroups.length})`, 'warning');
+            } else {
+                CoffeeMachine.showToast('设置保存失败', 'error');
+            }
+        });
+}
+
+// 监听选项卡切换
+document.addEventListener('shown.bs.tab', function(event) {
+    const targetTab = event.target.getAttribute('data-bs-target');
+    console.log('切换到设置选项卡:', targetTab);
+});
+</script>
+{% endblock %}

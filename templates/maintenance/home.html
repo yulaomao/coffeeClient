@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block title %}运维管理 - 智能自助咖啡机{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-white mb-0 fw-bold">
+                        <i class="fas fa-cog me-2"></i>运维管理
+                    </h2>
+                    <small class="text-white-50">设备ID: {{ device_info.device_id }}</small>
+                </div>
+                <div>
+                    <a href="{{ url_for('maintenance.logout') }}" class="btn btn-outline-light">
+                        <i class="fas fa-sign-out-alt me-2"></i>退出
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 状态概览卡片 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-server text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">设备状态</h6>
+                            <h4 class="mb-0">
+                                <span class="status-indicator status-{{ 'online' if device_info.status == 'online' else 'offline' }}"></span>
+                                {{ '在线' if device_info.status == 'online' else '离线' }}
+                            </h4>
+                            <small class="text-muted">运行时长: {{ health_status.uptime_seconds // 3600 }}小时</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-shopping-cart text-success" style="font-size: 2rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">今日销量</h6>
+                            <h4 class="mb-0">{{ today_stats.orders }}杯</h4>
+                            <small class="text-muted">营收: ¥{{ "%.2f"|format(today_stats.revenue_cents / 100) }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="fas fa-flask text-warning" style="font-size: 2rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">物料状态</h6>
+                            <h4 class="mb-0">{{ bins|length - low_bins|length }}/{{ bins|length }}</h4>
+                            <small class="text-{{ 'danger' if low_bins|length > 1 else 'success' }}">
+                                {{ low_bins|length }}个低量
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            {% if brewing_status %}
+                                <i class="fas fa-coffee text-primary brewing-animation" style="font-size: 2rem;"></i>
+                            {% else %}
+                                <i class="fas fa-pause-circle text-secondary" style="font-size: 2rem;"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">制作状态</h6>
+                            <h4 class="mb-0">
+                                {{ '制作中' if brewing_status else '空闲' }}
+                            </h4>
+                            {% if brewing_status %}
+                            <small class="text-muted">进度: {{ brewing_status.progress_pct }}%</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 快捷操作 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>快捷操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <button class="btn btn-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3"
+                                    onclick="performQuickAction('sync')">
+                                <i class="fas fa-sync-alt mb-2" style="font-size: 1.5rem;"></i>
+                                <small>立即同步</small>
+                            </button>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <button class="btn btn-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3"
+                                    onclick="performQuickAction('open_door')">
+                                <i class="fas fa-door-open mb-2" style="font-size: 1.5rem;"></i>
+                                <small>开门</small>
+                            </button>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <button class="btn btn-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3"
+                                    onclick="performQuickAction('clean')">
+                                <i class="fas fa-spray-can mb-2" style="font-size: 1.5rem;"></i>
+                                <small>清洗</small>
+                            </button>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <button class="btn btn-secondary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3"
+                                    onclick="performQuickAction('water_test')">
+                                <i class="fas fa-tint mb-2" style="font-size: 1.5rem;"></i>
+                                <small>出水测试</small>
+                            </button>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <a href="{{ url_for('maintenance.bins') }}" class="btn btn-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                <i class="fas fa-flask mb-2" style="font-size: 1.5rem;"></i>
+                                <small>料盒管理</small>
+                            </a>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <a href="{{ url_for('maintenance.settings') }}" class="btn btn-dark w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                                <i class="fas fa-cog mb-2" style="font-size: 1.5rem;"></i>
+                                <small>设置</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 详细信息 -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cube me-2"></i>料盒状态
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if bins %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>料盒</th>
+                                    <th>物料</th>
+                                    <th>剩余</th>
+                                    <th>状态</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bin_index, bin_info in bins.items() %}
+                                <tr>
+                                    <td>#{{ bin_index }}</td>
+                                    <td>
+                                        {% if bin_info.material_code == 'BEAN_A' %}咖啡豆
+                                        {% elif bin_info.material_code == 'MILK_POWDER' %}奶粉
+                                        {% elif bin_info.material_code == 'SUGAR' %}糖
+                                        {% elif bin_info.material_code == 'WATER' %}水
+                                        {% else %}{{ bin_info.material_code }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ bin_info.remaining }}{{ bin_info.unit }}
+                                        <small class="text-muted">
+                                            ({{ "%.1f"|format((bin_info.remaining|float / bin_info.capacity|float * 100)) }}%)
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% set pct = (bin_info.remaining|float / bin_info.capacity|float * 100) %}
+                                        {% if pct < bin_info.threshold_low_pct|float %}
+                                            <span class="badge bg-danger">低量</span>
+                                        {% elif pct < 50 %}
+                                            <span class="badge bg-warning">中量</span>
+                                        {% else %}
+                                            <span class="badge bg-success">充足</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">暂无料盒信息</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>系统信息
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-primary">{{ health_status.memory_usage_pct|round(1) }}%</div>
+                                <small class="text-muted">内存使用</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-info">{{ health_status.cpu_usage_pct|round(1) }}%</div>
+                                <small class="text-muted">CPU使用</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-warning">{{ health_status.disk_usage_pct|round(1) }}%</div>
+                                <small class="text-muted">磁盘使用</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 text-success">{{ device_info.boot_count }}</div>
+                                <small class="text-muted">启动次数</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="small">
+                        <div class="d-flex justify-content-between">
+                            <span>固件版本:</span>
+                            <span>{{ device_info.fw_version }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>最后维护:</span>
+                            <span>
+                                {% if device_info.last_maintenance_ts %}
+                                    {{ moment(device_info.last_maintenance_ts).fromNow() }}
+                                {% else %}
+                                    从未维护
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 执行快捷操作
+function performQuickAction(action) {
+    // 显示确认对话框（对危险操作）
+    if (action === 'open_door' || action === 'clean') {
+        if (!confirm(`确定要执行 ${getActionName(action)} 操作吗？`)) {
+            return;
+        }
+    }
+    
+    // 显示加载提示
+    CoffeeMachine.showToast(`正在执行${getActionName(action)}...`, 'info');
+    
+    // 发送操作请求
+    fetch('/maintenance/quick-ops', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ operation: action })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+            
+            // 某些操作后需要刷新页面
+            if (action === 'sync') {
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        } else {
+            CoffeeMachine.showToast(data.message || '操作失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('快捷操作失败:', error);
+        CoffeeMachine.showToast('操作失败，请稍后再试', 'error');
+    });
+}
+
+// 获取操作名称
+function getActionName(action) {
+    const actionNames = {
+        'sync': '同步',
+        'open_door': '开门',
+        'clean': '清洗',
+        'water_test': '出水测试'
+    };
+    return actionNames[action] || action;
+}
+
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // SSE事件监听
+    document.addEventListener('coffeeEvent', function(event) {
+        const data = event.detail;
+        
+        // 处理物料更新事件
+        if (data.type === 'material_update') {
+            // 可以实时更新料盒状态显示
+            console.log('料盒状态更新:', data);
+        }
+        
+        // 处理制作状态更新
+        if (data.type === 'brew_progress' || data.type === 'brew_done') {
+            // 可以实时更新制作状态
+            console.log('制作状态更新:', data);
+        }
+    });
+    
+    // 定期刷新页面数据
+    setInterval(function() {
+        // 这里可以通过AJAX更新部分数据，而不需要刷新整个页面
+        updatePageData();
+    }, 30000); // 每30秒更新一次
+});
+
+// 更新页面数据
+function updatePageData() {
+    fetch('/api/device/status')
+        .then(response => response.json())
+        .then(data => {
+            console.log('设备状态更新:', data);
+            // 这里可以更新状态显示
+        })
+        .catch(error => {
+            console.error('更新数据失败:', error);
+        });
+}
+</script>
+{% endblock %}

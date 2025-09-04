@@ -1,0 +1,538 @@
+{% extends "base.html" %}
+
+{% block title %}运维日志 - 运维管理{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('maintenance.home') }}" class="btn btn-outline-light me-3">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                    <h2 class="text-white mb-0 fw-bold d-inline">
+                        <i class="fas fa-list-alt me-2"></i>运维日志
+                    </h2>
+                </div>
+                <div>
+                    <button class="btn btn-danger me-2" onclick="clearLogs()">
+                        <i class="fas fa-trash me-2"></i>清空日志
+                    </button>
+                    <button class="btn btn-success" onclick="exportLogs()">
+                        <i class="fas fa-download me-2"></i>导出日志
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 日志筛选 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form class="row g-3" id="logFilterForm">
+                        <div class="col-lg-2 col-md-4">
+                            <label class="form-label">日志级别</label>
+                            <select class="form-select" id="logLevel" name="level">
+                                <option value="">全部</option>
+                                <option value="DEBUG">调试</option>
+                                <option value="INFO">信息</option>
+                                <option value="WARNING" selected>警告</option>
+                                <option value="ERROR">错误</option>
+                                <option value="CRITICAL">严重</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-lg-2 col-md-4">
+                            <label class="form-label">日志类型</label>
+                            <select class="form-select" id="logType" name="type">
+                                <option value="">全部</option>
+                                <option value="system">系统</option>
+                                <option value="hardware">硬件</option>
+                                <option value="order">订单</option>
+                                <option value="payment">支付</option>
+                                <option value="maintenance">维护</option>
+                                <option value="network">网络</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-lg-2 col-md-4">
+                            <label class="form-label">时间范围</label>
+                            <select class="form-select" id="timeRange" name="time_range">
+                                <option value="1h" selected>最近1小时</option>
+                                <option value="24h">最近24小时</option>
+                                <option value="7d">最近7天</option>
+                                <option value="30d">最近30天</option>
+                                <option value="custom">自定义</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <label class="form-label">关键词搜索</label>
+                            <input type="text" class="form-control" id="searchKeyword" name="keyword" placeholder="输入关键词...">
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-1"></i>筛选
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i>重置
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- 自定义时间范围 -->
+                    <div id="customTimeRange" class="row g-3 mt-3 d-none">
+                        <div class="col-md-4">
+                            <label class="form-label">开始时间</label>
+                            <input type="datetime-local" class="form-control" id="startTime" name="start_time">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">结束时间</label>
+                            <input type="datetime-local" class="form-control" id="endTime" name="end_time">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 日志统计 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-info-circle text-info mb-2" style="font-size: 2rem;"></i>
+                    <h4 id="infoCount" class="mb-1">{{ log_stats.info or 0 }}</h4>
+                    <small class="text-muted">信息日志</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-exclamation-triangle text-warning mb-2" style="font-size: 2rem;"></i>
+                    <h4 id="warningCount" class="mb-1">{{ log_stats.warning or 0 }}</h4>
+                    <small class="text-muted">警告日志</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-times-circle text-danger mb-2" style="font-size: 2rem;"></i>
+                    <h4 id="errorCount" class="mb-1">{{ log_stats.error or 0 }}</h4>
+                    <small class="text-muted">错误日志</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-list-alt text-secondary mb-2" style="font-size: 2rem;"></i>
+                    <h4 id="totalCount" class="mb-1">{{ log_stats.total or 0 }}</h4>
+                    <small class="text-muted">总日志数</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 日志内容 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-terminal me-2"></i>日志内容
+                    </h6>
+                    <div>
+                        <div class="form-check form-switch d-inline-block me-3">
+                            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                            <label class="form-check-label" for="autoRefresh">
+                                自动刷新
+                            </label>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshLogs()">
+                            <i class="fas fa-sync-alt me-1"></i>刷新
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="logContainer" class="log-container" style="height: 500px; overflow-y: auto; font-family: 'Courier New', monospace; background: #1a1a1a; color: #fff;">
+                        <div class="p-3">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin me-2"></i>正在加载日志...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">显示 <span id="logCount">0</span> 条日志</small>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary me-2" onclick="scrollToTop()">
+                                <i class="fas fa-arrow-up me-1"></i>顶部
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="scrollToBottom()">
+                                <i class="fas fa-arrow-down me-1"></i>底部
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 确认清空日志模态窗口 -->
+<div class="modal fade" id="clearLogsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>清空日志确认
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-warning me-2"></i>
+                    <strong>警告：</strong>此操作将永久删除所有日志记录，且无法恢复。
+                </div>
+                <p>确定要清空所有运维日志吗？</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmClear">
+                    <label class="form-check-label" for="confirmClear">
+                        我已了解此操作的风险并确认清空
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmClearBtn" disabled>清空日志</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let autoRefreshInterval;
+let currentLogs = [];
+
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化日志
+    loadLogs();
+    
+    // 设置自动刷新
+    setupAutoRefresh();
+    
+    // 绑定事件
+    setupEventListeners();
+    
+    // 监听 SSE 事件
+    document.addEventListener('coffeeEvent', function(event) {
+        const data = event.detail;
+        
+        if (data.type === 'new_log') {
+            addNewLogEntry(data);
+        }
+    });
+});
+
+// 设置事件监听器
+function setupEventListeners() {
+    // 日志筛选表单
+    document.getElementById('logFilterForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadLogs();
+    });
+    
+    // 时间范围选择
+    document.getElementById('timeRange').addEventListener('change', function() {
+        const customRange = document.getElementById('customTimeRange');
+        if (this.value === 'custom') {
+            customRange.classList.remove('d-none');
+        } else {
+            customRange.classList.add('d-none');
+        }
+    });
+    
+    // 自动刷新开关
+    document.getElementById('autoRefresh').addEventListener('change', function() {
+        setupAutoRefresh();
+    });
+    
+    // 清空确认复选框
+    document.getElementById('confirmClear').addEventListener('change', function() {
+        document.getElementById('confirmClearBtn').disabled = !this.checked;
+    });
+    
+    // 确认清空按钮
+    document.getElementById('confirmClearBtn').addEventListener('click', function() {
+        performClearLogs();
+    });
+    
+    // 表单重置
+    document.querySelector('button[type="reset"]').addEventListener('click', function() {
+        setTimeout(() => {
+            document.getElementById('customTimeRange').classList.add('d-none');
+            loadLogs();
+        }, 100);
+    });
+}
+
+// 设置自动刷新
+function setupAutoRefresh() {
+    // 清除现有定时器
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // 如果启用自动刷新
+    if (document.getElementById('autoRefresh').checked) {
+        autoRefreshInterval = setInterval(function() {
+            loadLogs(true); // 静默刷新
+        }, 5000); // 每5秒刷新
+    }
+}
+
+// 加载日志
+function loadLogs(silent = false) {
+    if (!silent) {
+        document.getElementById('logContainer').innerHTML = `
+            <div class="p-3 text-center text-muted">
+                <i class="fas fa-spinner fa-spin me-2"></i>正在加载日志...
+            </div>
+        `;
+    }
+    
+    // 获取筛选参数
+    const formData = new FormData(document.getElementById('logFilterForm'));
+    const params = new URLSearchParams(formData);
+    
+    fetch(`/api/device/logs?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentLogs = data.logs || [];
+                renderLogs(currentLogs);
+                updateLogStats(data.stats || {});
+            } else {
+                showLogError(data.message || '加载日志失败');
+            }
+        })
+        .catch(error => {
+            console.error('加载日志失败:', error);
+            showLogError('网络错误，加载失败');
+        });
+}
+
+// 渲染日志
+function renderLogs(logs) {
+    const container = document.getElementById('logContainer');
+    
+    if (!logs || logs.length === 0) {
+        container.innerHTML = `
+            <div class="p-3 text-center text-muted">
+                <i class="fas fa-inbox me-2"></i>暂无日志记录
+            </div>
+        `;
+        document.getElementById('logCount').textContent = '0';
+        return;
+    }
+    
+    let html = '';
+    logs.forEach(log => {
+        html += formatLogEntry(log);
+    });
+    
+    container.innerHTML = html;
+    document.getElementById('logCount').textContent = logs.length;
+    
+    // 滚动到底部
+    container.scrollTop = container.scrollHeight;
+}
+
+// 格式化单条日志
+function formatLogEntry(log) {
+    const levelColors = {
+        'DEBUG': '#6c757d',
+        'INFO': '#0dcaf0',
+        'WARNING': '#ffc107',
+        'ERROR': '#dc3545',
+        'CRITICAL': '#842029'
+    };
+    
+    const typeIcons = {
+        'system': 'fas fa-cog',
+        'hardware': 'fas fa-microchip',
+        'order': 'fas fa-shopping-cart',
+        'payment': 'fas fa-credit-card',
+        'maintenance': 'fas fa-tools',
+        'network': 'fas fa-wifi'
+    };
+    
+    const levelColor = levelColors[log.level] || '#fff';
+    const typeIcon = typeIcons[log.type] || 'fas fa-info-circle';
+    const timestamp = new Date(log.timestamp).toLocaleString();
+    
+    return `
+        <div class="log-entry border-bottom" style="padding: 8px 15px; border-left: 3px solid ${levelColor};">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="${typeIcon}" style="color: ${levelColor}; width: 16px;"></i>
+                        <span class="badge" style="background-color: ${levelColor}; font-size: 0.75em; margin: 0 8px;">${log.level}</span>
+                        <span class="text-info small">[${log.type.toUpperCase()}]</span>
+                        <span class="text-muted small ms-auto">${timestamp}</span>
+                    </div>
+                    <div class="log-message" style="font-size: 14px; line-height: 1.4; color: #e9ecef;">
+                        ${escapeHtml(log.message)}
+                    </div>
+                    ${log.details ? `
+                        <div class="log-details mt-1" style="font-size: 12px; color: #adb5bd; padding-left: 15px;">
+                            ${escapeHtml(JSON.stringify(log.details, null, 2))}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// 添加新日志条目
+function addNewLogEntry(logData) {
+    const container = document.getElementById('logContainer');
+    const newEntry = formatLogEntry(logData);
+    
+    // 如果当前没有日志，清空容器
+    if (currentLogs.length === 0) {
+        container.innerHTML = '';
+    }
+    
+    // 添加新日志
+    container.insertAdjacentHTML('beforeend', newEntry);
+    
+    // 更新计数
+    currentLogs.push(logData);
+    document.getElementById('logCount').textContent = currentLogs.length;
+    
+    // 自动滚动到底部
+    container.scrollTop = container.scrollHeight;
+    
+    // 保持最多1000条日志
+    if (currentLogs.length > 1000) {
+        const firstEntry = container.querySelector('.log-entry');
+        if (firstEntry) {
+            firstEntry.remove();
+        }
+        currentLogs.shift();
+    }
+}
+
+// 更新日志统计
+function updateLogStats(stats) {
+    document.getElementById('infoCount').textContent = stats.info || 0;
+    document.getElementById('warningCount').textContent = stats.warning || 0;
+    document.getElementById('errorCount').textContent = stats.error || 0;
+    document.getElementById('totalCount').textContent = stats.total || 0;
+}
+
+// 显示日志错误
+function showLogError(message) {
+    document.getElementById('logContainer').innerHTML = `
+        <div class="p-3 text-center text-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+        </div>
+    `;
+    document.getElementById('logCount').textContent = '0';
+}
+
+// HTML转义
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 刷新日志
+function refreshLogs() {
+    loadLogs();
+}
+
+// 滚动到顶部
+function scrollToTop() {
+    document.getElementById('logContainer').scrollTop = 0;
+}
+
+// 滚动到底部
+function scrollToBottom() {
+    const container = document.getElementById('logContainer');
+    container.scrollTop = container.scrollHeight;
+}
+
+// 清空日志
+function clearLogs() {
+    const modal = new bootstrap.Modal(document.getElementById('clearLogsModal'));
+    modal.show();
+}
+
+// 执行清空日志操作
+function performClearLogs() {
+    CoffeeMachine.showToast('正在清空日志...', 'info');
+    
+    fetch('/api/device/logs', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+            
+            // 关闭模态窗口
+            const modal = bootstrap.Modal.getInstance(document.getElementById('clearLogsModal'));
+            modal.hide();
+            
+            // 重新加载日志
+            setTimeout(() => loadLogs(), 1000);
+        } else {
+            CoffeeMachine.showToast(data.message || '清空失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('清空日志失败:', error);
+        CoffeeMachine.showToast('清空失败，请稍后再试', 'error');
+    });
+}
+
+// 导出日志
+function exportLogs() {
+    const formData = new FormData(document.getElementById('logFilterForm'));
+    const params = new URLSearchParams(formData);
+    
+    CoffeeMachine.showToast('正在准备导出文件...', 'info');
+    
+    // 创建下载链接
+    const downloadUrl = `/api/device/logs/export?${params}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `coffee_machine_logs_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    CoffeeMachine.showToast('日志导出完成', 'success');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,739 @@
+{% extends "base.html" %}
+
+{% block title %}设备状态 - 运维管理{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('maintenance.home') }}" class="btn btn-outline-light me-3">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                    <h2 class="text-white mb-0 fw-bold d-inline">
+                        <i class="fas fa-chart-line me-2"></i>设备状态
+                    </h2>
+                </div>
+                <div>
+                    <button class="btn btn-success" onclick="refreshStatus()">
+                        <i class="fas fa-sync-alt me-2"></i>刷新
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 实时状态卡片 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="status-indicator status-{{ 'online' if device_info.status == 'online' else 'offline' }} me-2"></div>
+                        <h5 class="mb-0">{{ '在线' if device_info.status == 'online' else '离线' }}</h5>
+                    </div>
+                    <p class="text-muted mb-1">设备状态</p>
+                    <small class="text-muted">运行时长: {{ (health_status.uptime_seconds / 3600)|round(1) }}小时</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% set temp_color = 'success' if device_info.temperature_celsius < 75 else 'warning' if device_info.temperature_celsius < 85 else 'danger' %}
+                    <i class="fas fa-thermometer-half text-{{ temp_color }} mb-2" style="font-size: 2rem;"></i>
+                    <h4 class="mb-1">{{ device_info.temperature_celsius }}°C</h4>
+                    <p class="text-muted mb-0">设备温度</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if brewing_status %}
+                        <i class="fas fa-coffee text-primary brewing-animation mb-2" style="font-size: 2rem;"></i>
+                        <h5 class="mb-1">制作中</h5>
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div class="progress-bar" style="width: {{ brewing_status.progress_pct }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ brewing_status.progress_pct }}% 完成</small>
+                    {% else %}
+                        <i class="fas fa-pause-circle text-secondary mb-2" style="font-size: 2rem;"></i>
+                        <h5 class="mb-1">空闲</h5>
+                        <p class="text-muted mb-0">等待订单</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-wifi text-info mb-2" style="font-size: 2rem;"></i>
+                    <h5 class="mb-1">{{ device_info.network_status|upper }}</h5>
+                    <p class="text-muted mb-1">网络状态</p>
+                    <small class="text-muted">信号: {{ device_info.signal_strength }}%</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 系统资源使用 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-microchip me-2"></i>系统资源
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <h6>CPU使用率</h6>
+                                <div class="position-relative d-inline-block">
+                                    <canvas id="cpuChart" width="100" height="100"></canvas>
+                                    <div class="position-absolute top-50 start-50 translate-middle">
+                                        <div class="h5 mb-0">{{ health_status.cpu_usage_pct|round(1) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <h6>内存使用率</h6>
+                                <div class="position-relative d-inline-block">
+                                    <canvas id="memoryChart" width="100" height="100"></canvas>
+                                    <div class="position-absolute top-50 start-50 translate-middle">
+                                        <div class="h5 mb-0">{{ health_status.memory_usage_pct|round(1) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <h6>磁盘使用率</h6>
+                                <div class="position-relative d-inline-block">
+                                    <canvas id="diskChart" width="100" height="100"></canvas>
+                                    <div class="position-absolute top-50 start-50 translate-middle">
+                                        <div class="h5 mb-0">{{ health_status.disk_usage_pct|round(1) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="text-center">
+                                <h6>网络流量</h6>
+                                <div class="text-success">
+                                    <i class="fas fa-arrow-down me-1"></i>{{ (health_status.network_rx_bytes / 1024 / 1024)|round(1) }} MB
+                                </div>
+                                <div class="text-primary">
+                                    <i class="fas fa-arrow-up me-1"></i>{{ (health_status.network_tx_bytes / 1024 / 1024)|round(1) }} MB
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 设备详细信息 -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>设备信息
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted">设备ID</td>
+                                    <td><code>{{ device_info.device_id }}</code></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">固件版本</td>
+                                    <td>{{ device_info.fw_version }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">硬件版本</td>
+                                    <td>{{ device_info.hw_version }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">启动时间</td>
+                                    <td>{{ moment(device_info.boot_time_ts).format('YYYY-MM-DD HH:mm:ss') }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">启动次数</td>
+                                    <td>{{ device_info.boot_count }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">最后维护</td>
+                                    <td>
+                                        {% if device_info.last_maintenance_ts %}
+                                            {{ moment(device_info.last_maintenance_ts).format('YYYY-MM-DD HH:mm:ss') }}
+                                        {% else %}
+                                            <span class="text-muted">从未维护</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">IP地址</td>
+                                    <td>{{ device_info.ip_address or '未知' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">MAC地址</td>
+                                    <td><code>{{ device_info.mac_address or '未知' }}</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-cogs me-2"></i>传感器状态
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted">
+                                        <i class="fas fa-thermometer-half me-1"></i>温度传感器
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">正常</span>
+                                        <small class="text-muted ms-2">{{ device_info.temperature_celsius }}°C</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">
+                                        <i class="fas fa-weight me-1"></i>压力传感器
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">正常</span>
+                                        <small class="text-muted ms-2">1.2 bar</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">
+                                        <i class="fas fa-tint me-1"></i>水位传感器
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">正常</span>
+                                        <small class="text-muted ms-2">85%</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">
+                                        <i class="fas fa-door-open me-1"></i>门锁传感器
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">正常</span>
+                                        <small class="text-muted ms-2">关闭</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">
+                                        <i class="fas fa-cog me-1"></i>研磨电机</td>
+                                    <td>
+                                        <span class="badge bg-success">正常</span>
+                                        <small class="text-muted ms-2">空闲</small>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">
+                                        <i class="fas fa-pump-medical me-1"></i>水泵
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">正常</span>
+                                        <small class="text-muted ms-2">空闲</small>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <button class="btn btn-outline-primary btn-sm w-100" onclick="testSensors()">
+                                <i class="fas fa-play me-1"></i>传感器测试
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-info btn-sm w-100" onclick="calibrateSensors()">
+                                <i class="fas fa-adjust me-1"></i>校准
+                            </button>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-outline-secondary btn-sm w-100" onclick="resetSensors()">
+                                <i class="fas fa-redo me-1"></i>重置
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 实时图表区域 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-area me-2"></i>实时监控图表
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-6 mb-3">
+                            <canvas id="temperatureChart" height="200"></canvas>
+                        </div>
+                        <div class="col-lg-6 mb-3">
+                            <canvas id="resourceChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// 图表实例
+let temperatureChart, resourceChart, cpuDoughnut, memoryDoughnut, diskDoughnut;
+
+// 历史数据
+let temperatureData = [];
+let cpuData = [];
+let memoryData = [];
+let networkData = [];
+
+// 初始化圆环图
+function initDoughnutCharts() {
+    // CPU 使用率圆环图
+    const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+    const cpuUsage = {{ health_status.cpu_usage_pct }};
+    
+    cpuDoughnut = new Chart(cpuCtx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [cpuUsage, 100 - cpuUsage],
+                backgroundColor: [
+                    cpuUsage > 80 ? '#dc3545' : cpuUsage > 60 ? '#ffc107' : '#28a745',
+                    '#e9ecef'
+                ],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+    
+    // 内存使用率圆环图
+    const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+    const memoryUsage = {{ health_status.memory_usage_pct }};
+    
+    memoryDoughnut = new Chart(memoryCtx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [memoryUsage, 100 - memoryUsage],
+                backgroundColor: [
+                    memoryUsage > 80 ? '#dc3545' : memoryUsage > 60 ? '#ffc107' : '#17a2b8',
+                    '#e9ecef'
+                ],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+    
+    // 磁盘使用率圆环图
+    const diskCtx = document.getElementById('diskChart').getContext('2d');
+    const diskUsage = {{ health_status.disk_usage_pct }};
+    
+    diskDoughnut = new Chart(diskCtx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [diskUsage, 100 - diskUsage],
+                backgroundColor: [
+                    diskUsage > 80 ? '#dc3545' : diskUsage > 60 ? '#ffc107' : '#fd7e14',
+                    '#e9ecef'
+                ],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: false,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+}
+
+// 初始化折线图
+function initLineCharts() {
+    // 温度监控图表
+    const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+    temperatureChart = new Chart(tempCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '设备温度 (°C)',
+                data: [],
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '设备温度趋势'
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 20,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: '温度 (°C)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '时间'
+                    }
+                }
+            }
+        }
+    });
+    
+    // 系统资源监控图表
+    const resourceCtx = document.getElementById('resourceChart').getContext('2d');
+    resourceChart = new Chart(resourceCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'CPU使用率 (%)',
+                    data: [],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.1
+                },
+                {
+                    label: '内存使用率 (%)',
+                    data: [],
+                    borderColor: '#17a2b8',
+                    backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: '系统资源使用趋势'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: '使用率 (%)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: '时间'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// 更新图表数据
+function updateCharts(statusData) {
+    const now = new Date().toLocaleTimeString();
+    
+    // 更新温度图表
+    if (temperatureChart) {
+        temperatureChart.data.labels.push(now);
+        temperatureChart.data.datasets[0].data.push(statusData.temperature_celsius);
+        
+        // 保持最多50个数据点
+        if (temperatureChart.data.labels.length > 50) {
+            temperatureChart.data.labels.shift();
+            temperatureChart.data.datasets[0].data.shift();
+        }
+        
+        temperatureChart.update('none');
+    }
+    
+    // 更新资源图表
+    if (resourceChart) {
+        resourceChart.data.labels.push(now);
+        resourceChart.data.datasets[0].data.push(statusData.cpu_usage_pct);
+        resourceChart.data.datasets[1].data.push(statusData.memory_usage_pct);
+        
+        // 保持最多50个数据点
+        if (resourceChart.data.labels.length > 50) {
+            resourceChart.data.labels.shift();
+            resourceChart.data.datasets[0].data.shift();
+            resourceChart.data.datasets[1].data.shift();
+        }
+        
+        resourceChart.update('none');
+    }
+    
+    // 更新圆环图
+    if (cpuDoughnut) {
+        const cpuUsage = statusData.cpu_usage_pct;
+        cpuDoughnut.data.datasets[0].data = [cpuUsage, 100 - cpuUsage];
+        cpuDoughnut.data.datasets[0].backgroundColor = [
+            cpuUsage > 80 ? '#dc3545' : cpuUsage > 60 ? '#ffc107' : '#28a745',
+            '#e9ecef'
+        ];
+        cpuDoughnut.update('none');
+    }
+    
+    if (memoryDoughnut) {
+        const memoryUsage = statusData.memory_usage_pct;
+        memoryDoughnut.data.datasets[0].data = [memoryUsage, 100 - memoryUsage];
+        memoryDoughnut.data.datasets[0].backgroundColor = [
+            memoryUsage > 80 ? '#dc3545' : memoryUsage > 60 ? '#ffc107' : '#17a2b8',
+            '#e9ecef'
+        ];
+        memoryDoughnut.update('none');
+    }
+    
+    if (diskDoughnut) {
+        const diskUsage = statusData.disk_usage_pct;
+        diskDoughnut.data.datasets[0].data = [diskUsage, 100 - diskUsage];
+        diskDoughnut.data.datasets[0].backgroundColor = [
+            diskUsage > 80 ? '#dc3545' : diskUsage > 60 ? '#ffc107' : '#fd7e14',
+            '#e9ecef'
+        ];
+        diskDoughnut.update('none');
+    }
+}
+
+// 刷新状态
+function refreshStatus() {
+    CoffeeMachine.showToast('正在刷新状态...', 'info');
+    
+    fetch('/api/device/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                CoffeeMachine.showToast('状态刷新成功', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                CoffeeMachine.showToast(data.message || '刷新失败', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('刷新状态失败:', error);
+            CoffeeMachine.showToast('刷新失败，请稍后再试', 'error');
+        });
+}
+
+// 测试传感器
+function testSensors() {
+    CoffeeMachine.showToast('正在测试传感器...', 'info');
+    
+    fetch('/maintenance/quick-ops', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ operation: 'sensor_test' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+        } else {
+            CoffeeMachine.showToast(data.message || '测试失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('测试传感器失败:', error);
+        CoffeeMachine.showToast('测试失败，请稍后再试', 'error');
+    });
+}
+
+// 校准传感器
+function calibrateSensors() {
+    if (!confirm('确定要校准传感器吗？此过程可能需要几分钟。')) {
+        return;
+    }
+    
+    CoffeeMachine.showToast('正在校准传感器...', 'info');
+    
+    fetch('/maintenance/quick-ops', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ operation: 'calibrate_sensors' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+        } else {
+            CoffeeMachine.showToast(data.message || '校准失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('校准传感器失败:', error);
+        CoffeeMachine.showToast('校准失败，请稍后再试', 'error');
+    });
+}
+
+// 重置传感器
+function resetSensors() {
+    if (!confirm('确定要重置传感器设置吗？这将恢复出厂设置。')) {
+        return;
+    }
+    
+    CoffeeMachine.showToast('正在重置传感器...', 'info');
+    
+    fetch('/maintenance/quick-ops', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ operation: 'reset_sensors' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            CoffeeMachine.showToast(data.message, 'success');
+        } else {
+            CoffeeMachine.showToast(data.message || '重置失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('重置传感器失败:', error);
+        CoffeeMachine.showToast('重置失败，请稍后再试', 'error');
+    });
+}
+
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化图表
+    initDoughnutCharts();
+    initLineCharts();
+    
+    // 添加初始数据
+    const initialData = {
+        temperature_celsius: {{ device_info.temperature_celsius }},
+        cpu_usage_pct: {{ health_status.cpu_usage_pct }},
+        memory_usage_pct: {{ health_status.memory_usage_pct }}
+    };
+    updateCharts(initialData);
+    
+    // 监听 SSE 事件以获取实时状态更新
+    document.addEventListener('coffeeEvent', function(event) {
+        const data = event.detail;
+        
+        if (data.type === 'device_status_update') {
+            updateCharts(data);
+        }
+        
+        if (data.type === 'sensor_alert') {
+            CoffeeMachine.showToast(`传感器警报: ${data.message}`, 'warning');
+        }
+    });
+    
+    // 定期更新数据
+    setInterval(function() {
+        fetch('/api/device/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.health) {
+                    const statusData = {
+                        temperature_celsius: data.device.temperature_celsius,
+                        cpu_usage_pct: data.health.cpu_usage_pct,
+                        memory_usage_pct: data.health.memory_usage_pct
+                    };
+                    updateCharts(statusData);
+                }
+            })
+            .catch(error => {
+                console.error('获取状态更新失败:', error);
+            });
+    }, 10000); // 每10秒更新一次
+});
+</script>
+{% endblock %}

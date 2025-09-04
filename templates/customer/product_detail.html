@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}商品详情 - 智能自助咖啡机{% endblock %}
+
+{% block body_class %}fullscreen{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100 p-4">
+  <div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+  <a href="{{ url_for('customer.menu') }}" class="btn btn-light btn-lg rounded-pill">
+        <i class="fas fa-arrow-left me-2"></i>返回
+      </a>
+  <h2 class="text-white mb-0 fw-bold"><i class="fas fa-mug-hot me-2"></i>{{ item.name }}</h2>
+      <div style="width:120px"></div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card p-4 h-100">
+        <div class="text-center">
+          <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:140px;height:140px;">
+            <i class="fas fa-mug-hot text-primary" style="font-size:3rem"></i>
+          </div>
+          <div class="mt-3">
+            <span class="h2 text-primary fw-bold">¥{{ "%.2f"|format(((item.price_cents|default(0))|int)/100) }}</span>
+          </div>
+          {% if not availability.available %}
+          <div class="mt-2">
+            <span class="badge bg-danger rounded-pill"><i class="fas fa-ban me-1"></i>暂不可售</span>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if item.description %}
+        <p class="text-muted mt-4">{{ item.description }}</p>
+        {% endif %}
+
+        {% if item.materials %}
+        <div class="mt-3">
+          <h6 class="fw-bold">主要配料</h6>
+          <ul class="list-inline text-muted">
+            {% for code, amount in item.materials.items() %}
+              <li class="list-inline-item me-3">
+                <i class="fas fa-dot-circle text-secondary me-1"></i>
+                {{ code }}: {{ amount }}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card p-4 h-100">
+        <h5 class="fw-bold mb-3">选择规格</h5>
+        <form id="optionForm">
+          <!-- 大小 -->
+          <div class="mb-3">
+            <label class="form-label">杯型</label>
+            <div class="btn-group w-100" role="group">
+              {% for opt in options.size %}
+              <input type="radio" class="btn-check" name="size" id="size_{{ opt.id }}" value="{{ opt.id }}" {% if loop.first %}checked{% endif %}>
+              <label class="btn btn-outline-primary" for="size_{{ opt.id }}">{{ opt.name }}{% if opt.price_add %} (+¥{{ '%.2f'|format(opt.price_add/100) }}){% endif %}</label>
+              {% endfor %}
+            </div>
+          </div>
+          <!-- 温度 -->
+          <div class="mb-3">
+            <label class="form-label">温度</label>
+            <div class="btn-group w-100" role="group">
+              {% for opt in options.temperature %}
+              <input type="radio" class="btn-check" name="temperature" id="temp_{{ opt.id }}" value="{{ opt.id }}" {% if loop.first %}checked{% endif %}>
+              <label class="btn btn-outline-primary" for="temp_{{ opt.id }}">{{ opt.name }}</label>
+              {% endfor %}
+            </div>
+          </div>
+          <!-- 甜度 -->
+          <div class="mb-3">
+            <label class="form-label">甜度</label>
+            <div class="btn-group w-100" role="group">
+              {% for opt in options.sugar %}
+              <input type="radio" class="btn-check" name="sugar" id="sugar_{{ opt.id }}" value="{{ opt.id }}" {% if loop.first %}checked{% endif %}>
+              <label class="btn btn-outline-primary" for="sugar_{{ opt.id }}">{{ opt.name }}</label>
+              {% endfor %}
+            </div>
+          </div>
+        </form>
+
+        {% if availability.available %}
+        <div class="d-grid gap-2 mt-3">
+          <button id="addCartBtn" class="btn btn-outline-primary btn-lg rounded-pill w-100">
+            <i class="fas fa-cart-plus me-2"></i>加入购物车
+          </button>
+          <button id="gotoCartBtn" class="btn btn-secondary btn-lg rounded-pill w-100" onclick="location.href='/cart'">
+            <i class="fas fa-shopping-cart me-2"></i>去购物车
+          </button>
+          <button id="buyBtn" class="btn btn-primary btn-lg rounded-pill w-100">
+            <i class="fas fa-bolt me-2"></i>立即购买
+          </button>
+        </div>
+        {% else %}
+        <div class="alert alert-warning rounded-3 mt-3" role="alert">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+            <div>
+              <div class="fw-bold">暂不可售</div>
+              <div class="small text-muted">{{ availability.message }}</div>
+            </div>
+          </div>
+          {% if availability.missing_materials %}
+          <ul class="mt-2 mb-0 small">
+            {% for m in availability.missing_materials %}
+            <li>{{ m.material_code }} 需要 {{ m.required }}，可用 {{ m.available }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const buyBtn = document.getElementById('buyBtn');
+  const addCartBtn = document.getElementById('addCartBtn');
+  if (!buyBtn) return;
+  buyBtn.addEventListener('click', async function(){
+    const payload = {
+  item_id: '{{ item_id }}',
+      options: Object.fromEntries(new FormData(document.getElementById('optionForm')).entries())
+    };
+    const res = await fetch('/payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.success) {
+      const url = data.redirect_url || ('/brewing/' + (data.order_id || ''));
+      if (url) { window.location.href = url; } else { alert('下单成功，但跳转地址缺失'); }
+    } else {
+      alert(data.message || '下单失败');
+    }
+  });
+
+  if (addCartBtn){
+    addCartBtn.addEventListener('click', async function(){
+      const payload = {
+        item_id: '{{ item_id }}',
+        qty: 1,
+        options: Object.fromEntries(new FormData(document.getElementById('optionForm')).entries())
+      };
+      const res = await fetch('/cart/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (data.ok){
+        // 简单提示
+        addCartBtn.classList.remove('btn-outline-primary');
+        addCartBtn.classList.add('btn-success');
+        addCartBtn.innerHTML = '<i class="fas fa-check me-2"></i>已加入，去购物车';
+        setTimeout(()=>{ location.href = '/cart'; }, 600);
+      } else {
+        alert(data.message || '加入失败');
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}

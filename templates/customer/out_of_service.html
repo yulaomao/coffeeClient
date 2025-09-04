@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}设备维护中 - 智能自助咖啡机{% endblock %}
+
+{% block body_class %}fullscreen d-flex align-items-center justify-content-center{% endblock %}
+
+{% block content %}
+<div class="container text-center">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card p-5">
+                <div class="card-body">
+                    <!-- 状态图标 -->
+                    <div class="mb-4">
+                        {% if reason == 'maintenance' %}
+                            <i class="fas fa-tools text-warning" style="font-size: 5rem;"></i>
+                        {% elif reason == 'low_materials' %}
+                            <i class="fas fa-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                        {% elif reason == 'network' %}
+                            <i class="fas fa-wifi-slash text-danger" style="font-size: 5rem;"></i>
+                        {% elif reason == 'offline' %}
+                            <i class="fas fa-power-off text-danger" style="font-size: 5rem;"></i>
+                        {% else %}
+                            <i class="fas fa-pause-circle text-secondary" style="font-size: 5rem;"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 状态标题 -->
+                    <h1 class="display-5 text-dark mb-4 fw-bold">
+                        {% if reason == 'maintenance' %}
+                            设备维护中
+                        {% elif reason == 'low_materials' %}
+                            物料不足
+                        {% elif reason == 'network' %}
+                            网络连接中断
+                        {% elif reason == 'offline' %}
+                            设备离线
+                        {% else %}
+                            暂停服务
+                        {% endif %}
+                    </h1>
+                    
+                    <!-- 状态描述 -->
+                    <div class="mb-4">
+                        <p class="lead text-muted">
+                            {% if reason == 'maintenance' %}
+                                设备正在进行例行维护，请稍后再试
+                            {% elif reason == 'low_materials' %}
+                                多个料盒物料不足，暂时无法提供服务
+                                {% if low_bins_count %}
+                                <br><small class="text-warning">{{ low_bins_count }} 个料盒需要补充</small>
+                                {% endif %}
+                            {% elif reason == 'network' %}
+                                网络连接中断，正在尝试重新连接
+                            {% elif reason == 'offline' %}
+                                设备当前离线，请稍后再试
+                            {% else %}
+                                设备暂时不可用，我们正在处理中
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <!-- 预计恢复时间 -->
+                    {% if reason in ['maintenance', 'low_materials'] %}
+                    <div class="mb-4">
+                        <div class="alert alert-info d-inline-block">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>预计恢复时间：</strong>
+                            {% if reason == 'maintenance' %}
+                                约 15 分钟
+                            {% else %}
+                                物料补充后即可恢复
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- 刷新按钮 -->
+                    <div class="mb-4">
+                        <button class="btn btn-primary btn-lg rounded-pill px-5" onclick="checkDeviceStatus()">
+                            <i class="fas fa-sync-alt me-2" id="refreshIcon"></i>检查状态
+                        </button>
+                    </div>
+                    
+                    <!-- 联系方式 -->
+                    <div class="mt-5">
+                        <div class="bg-light rounded p-3">
+                            <h6 class="text-muted mb-2">需要帮助？</h6>
+                            <p class="mb-0">
+                                <i class="fas fa-phone me-2 text-primary"></i>
+                                服务热线：400-123-4567
+                                <br>
+                                <i class="fas fa-envelope me-2 text-primary"></i>
+                                邮箱：support@coffee.com
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- 自动刷新提示 -->
+                    <div class="mt-4">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            页面将每 30 秒自动检查设备状态
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 状态检查进度条 -->
+<div class="position-fixed bottom-0 w-100 p-3" id="statusCheck" style="display: none;">
+    <div class="bg-white rounded p-3 shadow">
+        <div class="d-flex align-items-center">
+            <div class="spinner-border spinner-border-sm text-primary me-3"></div>
+            <span class="text-dark">正在检查设备状态...</span>
+        </div>
+        <div class="progress mt-2" style="height: 4px;">
+            <div class="progress-bar bg-primary" style="width: 0%;" id="checkProgress"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 检查设备状态
+    function checkDeviceStatus() {
+        const refreshIcon = document.getElementById('refreshIcon');
+        const statusCheck = document.getElementById('statusCheck');
+        const checkProgress = document.getElementById('checkProgress');
+        
+        // 显示检查UI
+        refreshIcon.classList.add('fa-spin');
+        statusCheck.style.display = 'block';
+        
+        // 模拟进度条
+        let progress = 0;
+        const progressTimer = setInterval(() => {
+            progress += 10;
+            checkProgress.style.width = `${progress}%`;
+            
+            if (progress >= 100) {
+                clearInterval(progressTimer);
+            }
+        }, 200);
+        
+        // 实际状态检查
+        fetch('/api/device/status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('设备状态:', data);
+                
+                const device = data.device;
+                
+                // 检查是否可以恢复服务
+                if (device && device.status === 'online') {
+                    // 检查物料状态
+                    return fetch('/api/bins');
+                } else {
+                    throw new Error('设备仍然离线');
+                }
+            })
+            .then(response => response.json())
+            .then(binsData => {
+                const lowBinsCount = binsData.low_bins ? binsData.low_bins.length : 0;
+                
+                // 如果低量料盒数量减少，可能可以恢复服务
+                if (lowBinsCount <= 1) { // 允许最多1个料盒低量
+                    // 延迟显示恢复信息
+                    setTimeout(() => {
+                        showRecoveryMessage();
+                    }, 1000);
+                } else {
+                    throw new Error(`仍有 ${lowBinsCount} 个料盒物料不足`);
+                }
+            })
+            .catch(error => {
+                console.error('设备状态检查失败:', error);
+                
+                // 延迟隐藏检查UI
+                setTimeout(() => {
+                    statusCheck.style.display = 'none';
+                    refreshIcon.classList.remove('fa-spin');
+                    
+                    // 显示检查结果
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${error.message || '设备状态未改变，请稍后再试'}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.card-body').appendChild(alertDiv);
+                    
+                    // 3秒后自动隐藏提示
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 3000);
+                }, 2000);
+            });
+    }
+    
+    // 显示恢复消息并跳转
+    function showRecoveryMessage() {
+        const statusCheck = document.getElementById('statusCheck');
+        statusCheck.innerHTML = `
+            <div class="bg-success text-white rounded p-3 shadow">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-3"></i>
+                    <span>设备已恢复正常，即将跳转到菜单页面...</span>
+                </div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-light" style="width: 100%;"></div>
+                </div>
+            </div>
+        `;
+        
+        // 2秒后跳转到菜单
+        setTimeout(() => {
+            window.location.href = '/menu';
+        }, 2000);
+    }
+    
+    // 自动状态检查（每30秒）
+    setInterval(checkDeviceStatus, 30000);
+    
+    // SSE事件监听（如果连接可用）
+    try {
+        const eventSource = new EventSource('/events');
+        
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log('收到事件:', data);
+            
+            // 监听网络恢复事件
+            if (data.type === 'net_status' && data.online) {
+                checkDeviceStatus();
+            }
+            
+            // 监听物料更新事件
+            if (data.type === 'material_update') {
+                checkDeviceStatus();
+            }
+        };
+        
+        eventSource.onerror = function(event) {
+            console.log('SSE连接失败，将使用轮询模式');
+            eventSource.close();
+        };
+        
+        // 页面卸载时关闭连接
+        window.addEventListener('beforeunload', function() {
+            eventSource.close();
+        });
+        
+    } catch (error) {
+        console.log('SSE不可用，使用轮询模式');
+    }
+    
+    // 页面可见性变化时检查状态
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            checkDeviceStatus();
+        }
+    });
+    
+    // 添加呼吸动画
+    const style = document.createElement('style');
+    style.textContent = `
+        .fas:not(.fa-spin) {
+            animation: breathe 2s ease-in-out infinite;
+        }
+        
+        @keyframes breathe {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}购物车 - 智能自助咖啡机{% endblock %}
+{% block body_class %}fullscreen{% endblock %}
+{% block content %}
+<div class="container-fluid h-100 p-4">
+  <div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+      <a href="{{ url_for('customer.menu') }}" class="btn btn-light btn-lg rounded-pill"><i class="fas fa-arrow-left me-2"></i>返回</a>
+      <h2 class="text-white mb-0 fw-bold"><i class="fas fa-shopping-cart me-2"></i>购物车</h2>
+      <div style="width:120px"></div>
+    </div>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card p-0">
+        {% if cart['items'] %}
+        <ul class="list-group list-group-flush" id="cartList">
+          {% for it in cart['items'] %}
+          <li class="list-group-item d-flex align-items-center" data-id="{{ it.cart_item_id }}">
+            <div class="flex-grow-1">
+              <div class="fw-bold">{{ it.name }}</div>
+              {% if it.options %}
+              <div class="text-muted small">选项：
+                {% for k, v in it.options.items() %}
+                  <span class="me-2">{{ k }}={{ v }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="text-nowrap me-3 text-primary fw-bold">¥{{ '%.2f'|format((it.price_cents|int)/100) }}</div>
+            <div class="input-group" style="width: 140px;">
+              <button class="btn btn-outline-secondary btn-sm" onclick="changeQty('{{ it.cart_item_id }}', -1)"><i class="fas fa-minus"></i></button>
+              <input class="form-control text-center" value="{{ it.qty }}" disabled>
+              <button class="btn btn-outline-secondary btn-sm" onclick="changeQty('{{ it.cart_item_id }}', 1)"><i class="fas fa-plus"></i></button>
+              <button class="btn btn-outline-danger btn-sm ms-2" onclick="removeItem('{{ it.cart_item_id }}')"><i class="fas fa-trash"></i></button>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="p-4 text-center text-muted">购物车为空</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card p-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="text-muted">共 {{ cart.count }} 件</div>
+          <div class="h4 text-primary mb-0">¥{{ '%.2f'|format((cart.total_cents|int)/100) }}</div>
+        </div>
+        <div class="d-grid gap-2 mt-3">
+          <button class="btn btn-outline-secondary rounded-pill" onclick="clearCart()">清空购物车</button>
+          <button class="btn btn-primary rounded-pill btn-lg" onclick="checkout()"><i class="fas fa-credit-card me-2"></i>去结算</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function changeQty(id, delta){
+  const row = document.querySelector(`[data-id="${id}"]`);
+  if(!row) return;
+  const qtyEl = row.querySelector('input');
+  const current = parseInt(qtyEl.value || '1');
+  const next = Math.max(0, current + delta);
+  const res = await fetch('/cart/update', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cart_item_id:id, qty: next})});
+  const data = await res.json();
+  if(data.ok){ location.reload(); } else { alert(data.message || '更新失败'); }
+}
+async function removeItem(id){
+  const res = await fetch('/cart/remove', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({cart_item_id:id})});
+  const data = await res.json();
+  if(data.ok){ location.reload(); } else { alert(data.message || '移除失败'); }
+}
+async function clearCart(){
+  const res = await fetch('/cart/clear', {method:'POST'});
+  const data = await res.json();
+  if(data.ok){ location.reload(); } else { alert('清空失败'); }
+}
+async function checkout(){
+  const res = await fetch('/checkout', {method:'POST'});
+  const data = await res.json();
+  if(data.ok){ window.location.href = data.redirect_url; } else { alert(data.message || '结算失败'); }
+}
+</script>
+{% endblock %}

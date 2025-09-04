@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}PIN验证 - 运维管理{% endblock %}
+
+{% block body_class %}fullscreen d-flex align-items-center justify-content-center{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-5">
+                    <!-- 头部标识 -->
+                    <div class="text-center mb-4">
+                        <i class="fas fa-shield-alt text-warning mb-3" style="font-size: 3rem;"></i>
+                        <h3 class="text-dark fw-bold">运维管理</h3>
+                        <p class="text-muted">请输入PIN码继续</p>
+                    </div>
+                    
+                    <!-- PIN输入显示 -->
+                    <div class="text-center mb-4">
+                        <div class="d-flex justify-content-center gap-2">
+                            <div class="pin-dot" id="pin-dot-0"></div>
+                            <div class="pin-dot" id="pin-dot-1"></div>
+                            <div class="pin-dot" id="pin-dot-2"></div>
+                            <div class="pin-dot" id="pin-dot-3"></div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-danger" id="error-message" style="display: none;"></small>
+                        </div>
+                    </div>
+                    
+                    <!-- 数字键盘 -->
+                    <div class="numpad">
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="1">1</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="2">2</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="3">3</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="4">4</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="5">5</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="6">6</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="7">7</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="8">8</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="9">9</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-secondary w-100" id="clear-btn">
+                                    <i class="fas fa-backspace"></i>
+                                </button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-outline-primary w-100 numpad-btn" data-number="0">0</button>
+                            </div>
+                            <div class="col-4">
+                                <button class="btn btn-success w-100" id="enter-btn">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 返回按钮 -->
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('customer.idle') }}" class="btn btn-link text-muted">
+                            <i class="fas fa-arrow-left me-2"></i>返回主页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.pin-dot {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #dee2e6;
+    border-radius: 50%;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.pin-dot.filled {
+    background: #007bff;
+    border-color: #007bff;
+}
+
+.numpad .btn {
+    aspect-ratio: 1;
+    font-size: 1.25rem;
+    font-weight: bold;
+    min-height: 60px;
+}
+
+.numpad-btn:active {
+    transform: scale(0.95);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let pinInput = '';
+const maxPinLength = 4;
+let failedAttempts = 0;
+const maxFailedAttempts = 3;
+const cooldownTime = 30000; // 30秒
+
+// 更新PIN显示
+function updatePinDisplay() {
+    for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`pin-dot-${i}`);
+        if (i < pinInput.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    }
+}
+
+// 添加数字到PIN
+function addNumber(number) {
+    if (pinInput.length < maxPinLength) {
+        pinInput += number;
+        updatePinDisplay();
+        
+        // 如果输入满4位，自动提交
+        if (pinInput.length === maxPinLength) {
+            setTimeout(submitPin, 300);
+        }
+    }
+}
+
+// 删除最后一位
+function removeLastNumber() {
+    if (pinInput.length > 0) {
+        pinInput = pinInput.slice(0, -1);
+        updatePinDisplay();
+    }
+}
+
+// 清空PIN
+function clearPin() {
+    pinInput = '';
+    updatePinDisplay();
+    hideError();
+}
+
+// 显示错误消息
+function showError(message) {
+    const errorElement = document.getElementById('error-message');
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+}
+
+// 隐藏错误消息
+function hideError() {
+    const errorElement = document.getElementById('error-message');
+    errorElement.style.display = 'none';
+}
+
+// 提交PIN验证
+function submitPin() {
+    if (pinInput.length !== maxPinLength) {
+        showError('请输入4位PIN码');
+        return;
+    }
+    
+    hideError();
+    
+    // 显示加载状态
+    const enterBtn = document.getElementById('enter-btn');
+    const originalContent = enterBtn.innerHTML;
+    enterBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    enterBtn.disabled = true;
+    
+    // 发送验证请求
+    fetch('/maintenance/pin', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pin: pinInput })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // 验证成功
+            enterBtn.innerHTML = '<i class="fas fa-check text-success"></i>';
+            CoffeeMachine.showToast('PIN验证成功', 'success');
+            
+            setTimeout(() => {
+                window.location.href = '/maintenance/';
+            }, 1000);
+        } else {
+            // 验证失败
+            failedAttempts++;
+            enterBtn.innerHTML = originalContent;
+            enterBtn.disabled = false;
+            
+            showError(data.message || 'PIN码错误');
+            clearPin();
+            
+            // 检查是否需要冷却
+            if (failedAttempts >= maxFailedAttempts) {
+                startCooldown();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('PIN验证失败:', error);
+        enterBtn.innerHTML = originalContent;
+        enterBtn.disabled = false;
+        showError('验证失败，请稍后再试');
+        clearPin();
+    });
+}
+
+// 开始冷却期
+function startCooldown() {
+    const buttons = document.querySelectorAll('.numpad .btn');
+    buttons.forEach(btn => btn.disabled = true);
+    
+    let countdown = cooldownTime / 1000;
+    const countdownInterval = setInterval(() => {
+        showError(`错误次数过多，请等待 ${countdown} 秒`);
+        countdown--;
+        
+        if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            buttons.forEach(btn => btn.disabled = false);
+            hideError();
+            failedAttempts = 0;
+        }
+    }, 1000);
+}
+
+// 事件监听器
+document.addEventListener('DOMContentLoaded', function() {
+    // 数字按钮点击
+    document.querySelectorAll('.numpad-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const number = this.getAttribute('data-number');
+            addNumber(number);
+        });
+    });
+    
+    // 清除按钮
+    document.getElementById('clear-btn').addEventListener('click', function() {
+        removeLastNumber();
+    });
+    
+    // 确认按钮
+    document.getElementById('enter-btn').addEventListener('click', function() {
+        submitPin();
+    });
+    
+    // 键盘输入支持
+    document.addEventListener('keydown', function(event) {
+        if (event.key >= '0' && event.key <= '9') {
+            addNumber(event.key);
+            event.preventDefault();
+        } else if (event.key === 'Backspace') {
+            removeLastNumber();
+            event.preventDefault();
+        } else if (event.key === 'Enter') {
+            submitPin();
+            event.preventDefault();
+        } else if (event.key === 'Escape') {
+            clearPin();
+            event.preventDefault();
+        }
+    });
+});
+
+// 添加触控反馈
+document.querySelectorAll('.numpad .btn').forEach(btn => {
+    btn.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.95)';
+    });
+    
+    btn.addEventListener('touchend', function() {
+        setTimeout(() => {
+            this.style.transform = 'scale(1)';
+        }, 150);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block title %}快速操作 - 运维管理{% endblock %}
+
+{% block body_class %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- 头部导航 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('maintenance.home') }}" class="btn btn-outline-light me-3">
+                        <i class="fas fa-arrow-left me-2"></i>返回
+                    </a>
+                    <h2 class="text-white mb-0 fw-bold d-inline">
+                        <i class="fas fa-bolt me-2"></i>快速操作
+                    </h2>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- 操作分类 -->
+    <div class="row">
+        <!-- 系统操作 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-server me-2"></i>系统操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <button class="btn btn-primary w-100 p-3" onclick="performAction('sync', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-sync-alt me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">立即同步</div>
+                                            <small>同步设备数据到云端</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-warning w-100 p-3" onclick="confirmAction('reboot', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-redo me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">重启系统</div>
+                                            <small>重新启动设备系统</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-info w-100 p-3" onclick="performAction('heartbeat', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-heartbeat me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">发送心跳</div>
+                                            <small>立即发送心跳包</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 硬件操作 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-microchip me-2"></i>硬件操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <button class="btn btn-success w-100 p-3" onclick="confirmAction('open_door', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-door-open me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">开门</div>
+                                            <small>打开设备门锁</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-secondary w-100 p-3" onclick="performAction('water_test', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-tint me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">出水测试</div>
+                                            <small>测试出水系统</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-dark w-100 p-3" onclick="performAction('motor_test', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-cog me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">电机测试</div>
+                                            <small>测试研磨电机</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 清洁维护 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-spray-can me-2"></i>清洁维护
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <button class="btn btn-info w-100 p-3" onclick="confirmAction('clean_light', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-soap me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">轻度清洗</div>
+                                            <small>快速冲洗管路 (3分钟)</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-warning w-100 p-3" onclick="confirmAction('clean_deep', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-spray-can me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">深度清洗</div>
+                                            <small>完整清洗流程 (15分钟)</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-danger w-100 p-3" onclick="confirmAction('descale', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-filter me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">除垢清洗</div>
+                                            <small>除垢剂清洗 (30分钟)</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 诊断测试 -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-stethoscope me-2"></i>诊断测试
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <button class="btn btn-primary w-100 p-3" onclick="performAction('full_check', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-search me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">全面检测</div>
+                                            <small>检测所有硬件模块</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-secondary w-100 p-3" onclick="performAction('sensor_test', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-thermometer-half me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">传感器测试</div>
+                                            <small>测试温度、压力等传感器</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div class="col-12">
+                            <button class="btn btn-info w-100 p-3" onclick="performAction('network_test', this)">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-wifi me-3" style="font-size: 1.2rem;"></i>
+                                        <div class="text-start">
+                                            <div class="fw-bold">网络测试</div>
+                                            <small>测试网络连接状态</small>
+                                        </div>
+                                    </div>
+                                    <i class="fas fa-chevron-right"></i>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 操作结果显示区域 -->
+    <div id="operationResult" class="row d-none">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-terminal me-2"></i>操作结果
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="resultContent" class="font-monospace small">
+                        <!-- 操作结果内容 -->
+                    </div>
+                    <div id="progressBar" class="progress mt-3 d-none">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 确认对话框模态窗口 -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>操作确认
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">确定要执行此操作吗？</p>
+                <div class="alert alert-warning">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        此操作可能会影响设备正常运行，请谨慎操作。
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmActionBtn">确定执行</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentAction = null;
+let currentButton = null;
+
+// 执行操作（不需要确认）
+function performAction(action, button) {
+    currentAction = action;
+    currentButton = button;
+    executeAction();
+}
+
+// 确认操作（需要确认）
+function confirmAction(action, button) {
+    currentAction = action;
+    currentButton = button;
+    
+    const actionNames = {
+        'reboot': '重启系统',
+        'open_door': '开门',
+        'clean_light': '轻度清洗',
+        'clean_deep': '深度清洗',
+        'descale': '除垢清洗'
+    };
+    
+    const actionDescriptions = {
+        'reboot': '设备将立即重启，可能需要2-3分钟恢复服务。',
+        'open_door': '设备门将立即解锁打开。',
+        'clean_light': '系统将执行3分钟的快速清洗流程。',
+        'clean_deep': '系统将执行15分钟的完整清洗流程。',
+        'descale': '系统将执行30分钟的除垢清洗流程。'
+    };
+    
+    document.getElementById('confirmMessage').innerHTML = 
+        `<strong>${actionNames[action] || action}</strong><br><br>${actionDescriptions[action] || ''}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+// 执行确认的操作
+document.getElementById('confirmActionBtn').addEventListener('click', function() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+    modal.hide();
+    executeAction();
+});
+
+// 执行实际操作
+function executeAction() {
+    if (!currentAction || !currentButton) return;
+    
+    // 显示操作进行中状态
+    const originalContent = currentButton.innerHTML;
+    currentButton.disabled = true;
+    currentButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>执行中...';
+    
+    // 显示结果区域
+    const resultDiv = document.getElementById('operationResult');
+    const resultContent = document.getElementById('resultContent');
+    const progressBar = document.getElementById('progressBar');
+    
+    resultDiv.classList.remove('d-none');
+    resultContent.innerHTML = `开始执行操作: ${getActionName(currentAction)}<br>`;
+    
+    // 对于长时间操作显示进度条
+    if (['clean_light', 'clean_deep', 'descale', 'full_check'].includes(currentAction)) {
+        progressBar.classList.remove('d-none');
+        simulateProgress();
+    } else {
+        progressBar.classList.add('d-none');
+    }
+    
+    // 发送操作请求
+    fetch('/maintenance/quick-ops', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ operation: currentAction })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultContent.innerHTML += `<span class="text-success">✓ ${data.message}</span><br>`;
+            CoffeeMachine.showToast(data.message, 'success');
+            
+            // 某些操作后的特殊处理
+            if (currentAction === 'reboot') {
+                resultContent.innerHTML += '<span class="text-warning">设备重启中，请等待...</span><br>';
+                setTimeout(() => {
+                    window.location.href = '/maintenance/pin-entry';
+                }, 5000);
+            } else if (currentAction === 'sync') {
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        } else {
+            resultContent.innerHTML += `<span class="text-danger">✗ ${data.message || '操作失败'}</span><br>`;
+            CoffeeMachine.showToast(data.message || '操作失败', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('操作失败:', error);
+        resultContent.innerHTML += '<span class="text-danger">✗ 网络错误，操作失败</span><br>';
+        CoffeeMachine.showToast('操作失败，请稍后再试', 'error');
+    })
+    .finally(() => {
+        // 恢复按钮状态
+        currentButton.disabled = false;
+        currentButton.innerHTML = originalContent;
+        
+        // 隐藏进度条
+        setTimeout(() => {
+            progressBar.classList.add('d-none');
+        }, 1000);
+    });
+}
+
+// 模拟进度条
+function simulateProgress() {
+    const progressBar = document.querySelector('#progressBar .progress-bar');
+    const durations = {
+        'clean_light': 3 * 60 * 1000,    // 3分钟
+        'clean_deep': 15 * 60 * 1000,   // 15分钟
+        'descale': 30 * 60 * 1000,      // 30分钟
+        'full_check': 2 * 60 * 1000     // 2分钟
+    };
+    
+    const duration = durations[currentAction] || 30000; // 默认30秒
+    const startTime = Date.now();
+    
+    const updateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min((elapsed / duration) * 100, 100);
+        
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = Math.round(progress) + '%';
+        
+        if (progress < 100) {
+            setTimeout(updateProgress, 1000);
+        }
+    };
+    
+    updateProgress();
+}
+
+// 获取操作名称
+function getActionName(action) {
+    const actionNames = {
+        'sync': '同步数据',
+        'reboot': '重启系统',
+        'heartbeat': '发送心跳',
+        'open_door': '开门',
+        'water_test': '出水测试',
+        'motor_test': '电机测试',
+        'clean_light': '轻度清洗',
+        'clean_deep': '深度清洗',
+        'descale': '除垢清洗',
+        'full_check': '全面检测',
+        'sensor_test': '传感器测试',
+        'network_test': '网络测试'
+    };
+    return actionNames[action] || action;
+}
+
+// 页面初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听 SSE 事件以获取实时更新
+    document.addEventListener('coffeeEvent', function(event) {
+        const data = event.detail;
+        const resultContent = document.getElementById('resultContent');
+        
+        // 处理维护操作进度更新
+        if (data.type === 'maintenance_progress' && !resultContent.classList.contains('d-none')) {
+            resultContent.innerHTML += `<span class="text-info">${data.message}</span><br>`;
+            resultContent.scrollTop = resultContent.scrollHeight;
+        }
+        
+        // 处理操作完成事件
+        if (data.type === 'maintenance_complete') {
+            resultContent.innerHTML += `<span class="text-success">✓ 操作完成: ${data.message}</span><br>`;
+            resultContent.scrollTop = resultContent.scrollHeight;
+        }
+    });
+});
+</script>
+{% endblock %}

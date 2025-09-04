@@ -1,0 +1,490 @@
+/* 智能咖啡机主样式文件 */
+
+/* 全局变量 */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    
+    --coffee-brown: #8B4513;
+    --coffee-light: #D2691E;
+    --cream-color: #F5F5DC;
+    
+    --border-radius: 12px;
+    --border-radius-lg: 20px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --box-shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.15);
+    
+    --transition: all 0.3s ease;
+    --transition-fast: all 0.15s ease;
+}
+
+/* 基础重置和优化 */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', 'Segoe UI', Roboto, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--dark-color);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 触控优化 */
+.touch-optimized {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 按钮样式增强 */
+.btn {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: var(--transition);
+    border: none;
+    min-height: 44px;
+    min-width: 44px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+    z-index: 1;
+}
+
+.btn:active:before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary {
+    background: linear-gradient(45deg, var(--primary-color), #0056b3);
+    box-shadow: var(--box-shadow);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(45deg, #0056b3, var(--primary-color));
+    transform: translateY(-2px);
+    box-shadow: var(--box-shadow-lg);
+}
+
+.btn-success {
+    background: linear-gradient(45deg, var(--success-color), #218838);
+}
+
+.btn-warning {
+    background: linear-gradient(45deg, var(--warning-color), #e0a800);
+}
+
+.btn-danger {
+    background: linear-gradient(45deg, var(--danger-color), #c82333);
+}
+
+/* 卡片样式增强 */
+.card {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-lg);
+}
+
+.card-coffee {
+    background: linear-gradient(135deg, var(--cream-color) 0%, #f8f9fa 100%);
+    border: 2px solid var(--coffee-light);
+}
+
+/* 进度条样式 */
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.progress-bar {
+    background: linear-gradient(45deg, var(--primary-color), var(--info-color));
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.progress-bar:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-image: linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 0.2) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.2) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 50px 50px;
+    animation: move 2s linear infinite;
+}
+
+@keyframes move {
+    0% { background-position: 0 0; }
+    100% { background-position: 50px 50px; }
+}
+
+/* 状态指示器 */
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    position: relative;
+}
+
+.status-indicator:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: inherit;
+    animation: pulse-status 2s infinite;
+}
+
+@keyframes pulse-status {
+    0% { transform: scale(1); opacity: 1; }
+    70% { transform: scale(1.4); opacity: 0; }
+    100% { transform: scale(1.4); opacity: 0; }
+}
+
+.status-online { background-color: var(--success-color); }
+.status-offline { background-color: var(--danger-color); }
+.status-warning { background-color: var(--warning-color); }
+.status-maintenance { background-color: var(--info-color); }
+
+/* 二维码样式 */
+.qr-code-container {
+    background: white;
+    padding: 20px;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow-lg);
+    display: inline-block;
+}
+
+.qr-code {
+    border-radius: var(--border-radius);
+    max-width: 100%;
+    height: auto;
+}
+
+/* 制作动画 */
+.brewing-container {
+    position: relative;
+    text-align: center;
+}
+
+.brewing-icon {
+    font-size: 4rem;
+    color: var(--coffee-brown);
+    animation: brewing 1.5s ease-in-out infinite;
+}
+
+@keyframes brewing {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(-5deg) scale(1.1); }
+    75% { transform: rotate(5deg) scale(1.1); }
+}
+
+.brewing-steam {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 30px;
+    background: linear-gradient(to top, transparent, rgba(255, 255, 255, 0.8));
+    border-radius: 2px;
+    animation: steam 2s ease-in-out infinite;
+}
+
+.brewing-steam:before,
+.brewing-steam:after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    height: 20px;
+    background: inherit;
+    border-radius: 2px;
+}
+
+.brewing-steam:before {
+    left: -8px;
+    animation: steam 2s ease-in-out infinite 0.3s;
+}
+
+.brewing-steam:after {
+    right: -8px;
+    animation: steam 2s ease-in-out infinite 0.6s;
+}
+
+@keyframes steam {
+    0%, 100% { opacity: 0; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+}
+
+/* 倒计时样式 */
+.countdown-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--primary-color) 0deg, var(--light-color) 0deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 0 auto;
+}
+
+.countdown-circle:before {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: white;
+}
+
+.countdown-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    position: relative;
+    z-index: 1;
+}
+
+/* 触控反馈 */
+.touch-feedback {
+    transition: var(--transition-fast);
+}
+
+.touch-feedback:active {
+    transform: scale(0.95);
+}
+
+/* 材料不足标识 */
+.material-insufficient {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+.material-sufficient {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+/* 订单状态样式 */
+.order-status {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.order-status-pending { background-color: var(--warning-color); color: #000; }
+.order-status-paid { background-color: var(--info-color); color: #fff; }
+.order-status-brewing { background-color: var(--primary-color); color: #fff; }
+.order-status-completed { background-color: var(--success-color); color: #fff; }
+.order-status-failed { background-color: var(--danger-color); color: #fff; }
+
+/* 模态框样式 */
+.modal-content {
+    border: none;
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--box-shadow-lg);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 20px 24px 16px;
+}
+
+.modal-body {
+    padding: 20px 24px;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 16px 24px 20px;
+}
+
+/* 表单样式 */
+.form-control {
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 12px 16px;
+    font-size: 1.1rem;
+    transition: var(--transition);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* 数字输入键盘 */
+.numpad {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.numpad .btn {
+    aspect-ratio: 1;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    body {
+        font-size: 1.1rem;
+    }
+    
+    .btn {
+        font-size: 1.2rem;
+        padding: 14px 24px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .brewing-icon {
+        font-size: 5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn {
+        padding: 16px 20px;
+        font-size: 1.1rem;
+    }
+    
+    .modal-dialog {
+        margin: 1rem;
+    }
+}
+
+/* 打印样式 */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+    }
+    
+    .btn, .modal, .position-fixed {
+        display: none !important;
+    }
+    
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+    .card {
+        background: white !important;
+        border: 2px solid #000 !important;
+    }
+    
+    .btn-primary {
+        background: #0000ff !important;
+        color: white !important;
+    }
+    
+    .text-muted {
+        color: #000 !important;
+    }
+}
+
+/* 动画减少模式 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* 无障碍辅助 */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* 焦点可见性 */
+.btn:focus,
+.form-control:focus,
+button:focus {
+    outline: 3px solid var(--primary-color) !important;
+    outline-offset: 2px !important;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
