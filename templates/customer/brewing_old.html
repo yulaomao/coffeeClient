@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}制作中 - 智能自助咖啡机{% endblock %}
+{% block body_class %}fullscreen{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100 p-4">
+  <div class="row mb-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+      <a href="{{ url_for('customer.idle') }}" class="btn btn-light btn-lg rounded-pill"><i class="fas fa-home me-2"></i>返回首页</a>
+      <h2 class="text-white fw-bold mb-0"><i class="fas fa-cogs me-2"></i>正在制作</h2>
+      <div style="width:120px"></div>
+    </div>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card p-4">
+        <div class="d-flex align-items-center mb-3">
+          <div class="spinner-border text-primary me-3" role="status"></div>
+          <div>
+            <div class="fw-bold">订单 {{ order_id }}</div>
+            <div class="text-muted small" id="stepText">准备开始...</div>
+          </div>
+        </div>
+        <div class="progress" style="height: 16px;">
+          <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+        </div>
+        <div class="text-muted small mt-2" id="etaText">预计剩余: --s</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const es = new EventSource('/events');
+  es.onmessage = function(e){
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'brew_progress' && data.order_id === '{{ order_id }}') {
+        const pct = Math.max(0, Math.min(100, data.pct||0));
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressBar').textContent = pct + '%';
+        document.getElementById('stepText').textContent = data.step + ` (${data.step_index+1}/${data.total_steps})`;
+        document.getElementById('etaText').textContent = '预计剩余: ' + (data.eta_s||0) + 's';
+      }
+      if (data.type === 'brew_done' && data.order_id === '{{ order_id }}') {
+        es.close();
+        const ok = !!data.ok;
+        const url = ok ? ('/done/{{ order_id }}') : ('/customer/out_of_service?reason=brew_failed');
+        window.location.href = url;
+      }
+    } catch(err) { console.error(err); }
+  };
+  window.addEventListener('beforeunload', ()=> es.close());
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}欢迎使用智能咖啡机{% endblock %}
+
+{% block body_class %}fullscreen{% endblock %}
+
+{% block content %}
+<div class="container-fluid h-100 p-0">
+    <!-- 吸引屏内容 -->
+    <div class="row h-100 m-0">
+        <!-- 主要内容区 -->
+        <div class="col-12 h-100 d-flex flex-column justify-content-center align-items-center text-center p-4">
+            <!-- 品牌标识 -->
+            <div class="mb-5">
+                <i class="fas fa-coffee text-white mb-3" style="font-size: 6rem; opacity: 0.9;"></i>
+                <h1 class="display-2 text-white fw-bold mb-2" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                    智能咖啡机
+                </h1>
+                <p class="lead text-white-50 mb-0" style="font-size: 1.5rem;">
+                    Fresh Coffee • Anytime • Anywhere
+                </p>
+            </div>
+            
+            <!-- 特色展示 -->
+            <div class="row mb-5 w-100" style="max-width: 800px;">
+                <div class="col-md-4 mb-3">
+                    <div class="text-white">
+                        <i class="fas fa-clock mb-2" style="font-size: 2rem;"></i>
+                        <h5>快速制作</h5>
+                        <small class="text-white-50">60秒即享新鲜咖啡</small>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-white">
+                        <i class="fas fa-mobile-alt mb-2" style="font-size: 2rem;"></i>
+                        <h5>扫码支付</h5>
+                        <small class="text-white-50">微信支付宝都支持</small>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-white">
+                        <i class="fas fa-star mb-2" style="font-size: 2rem;"></i>
+                        <h5>精品咖啡</h5>
+                        <small class="text-white-50">优质豆源现磨现制</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 主要操作按钮 -->
+            <div class="mb-4">
+                <a href="{{ url_for('customer.menu') }}" class="btn btn-light btn-lg px-5 py-3 rounded-pill shadow-lg" style="font-size: 1.5rem; font-weight: 600;">
+                    <i class="fas fa-play me-3"></i>开始点单
+                </a>
+            </div>
+            
+            <!-- 设备状态提示 -->
+            <div class="mt-4">
+                <div class="d-flex align-items-center justify-content-center text-white-50">
+                    <span class="status-indicator status-online"></span>
+                    <small>设备运行正常 • 所有饮品可选</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部信息栏 -->
+    <div class="position-fixed bottom-0 w-100 bg-dark bg-opacity-75 text-white p-2">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <small class="d-flex align-items-center">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        {{ device_info.get('alias', '智能咖啡机') }}
+                    </small>
+                </div>
+                <div class="col-6 text-end">
+                    <small>
+                        <i class="fas fa-wifi me-1"></i>
+                        在线 • 
+                        <span id="currentTime"></span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 屏保遮罩 -->
+<div class="position-fixed top-0 start-0 w-100 h-100 bg-dark d-none" id="screensaver" style="z-index: 9998;">
+    <div class="d-flex align-items-center justify-content-center h-100 text-white">
+        <div class="text-center">
+            <i class="fas fa-coffee mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
+            <h3 class="mb-2" style="opacity: 0.7;">触摸屏幕开始使用</h3>
+            <div class="spinner-border text-light mt-3" style="opacity: 0.3;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 更新当前时间
+    function updateTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('zh-CN', { 
+            hour12: false,
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        document.getElementById('currentTime').textContent = timeStr;
+    }
+    
+    updateTime();
+    setInterval(updateTime, 60000); // 每分钟更新一次
+    
+    // 屏保功能
+    let screensaverTimer = null;
+    const screensaverTimeout = {{ config.SCREENSAVER_TIMEOUT * 1000 }}; // 转换为毫秒
+    const screensaver = document.getElementById('screensaver');
+    
+    function showScreensaver() {
+        screensaver.classList.remove('d-none');
+        screensaver.style.animation = 'fadeIn 0.5s ease';
+    }
+    
+    function hideScreensaver() {
+        screensaver.classList.add('d-none');
+        resetScreensaverTimer();
+    }
+    
+    function resetScreensaverTimer() {
+        if (screensaverTimer) {
+            clearTimeout(screensaverTimer);
+        }
+        screensaverTimer = setTimeout(showScreensaver, screensaverTimeout);
+    }
+    
+    // 初始化屏保定时器
+    resetScreensaverTimer();
+    
+    // 监听用户活动
+    ['click', 'touchstart', 'mousemove'].forEach(event => {
+        document.addEventListener(event, function() {
+            if (!screensaver.classList.contains('d-none')) {
+                hideScreensaver();
+            } else {
+                resetScreensaverTimer();
+            }
+        });
+    });
+    
+    // 屏保点击事件
+    screensaver.addEventListener('click', hideScreensaver);
+    screensaver.addEventListener('touchstart', hideScreensaver);
+    
+    // 检查设备状态
+    function checkDeviceStatus() {
+        fetch('/api/device/status')
+            .then(response => response.json())
+            .then(data => {
+                console.log('设备状态:', data);
+                
+                // 如果设备离线或有问题，跳转到停服页面
+                const device = data.device;
+                if (!device || device.status !== 'online') {
+                    window.location.href = '/customer/out_of_service?reason=offline';
+                }
+            })
+            .catch(error => {
+                console.error('检查设备状态失败:', error);
+            });
+    }
+    
+    // 每30秒检查一次设备状态
+    setInterval(checkDeviceStatus, 30000);
+    
+    // CSS动画
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .btn-light:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(255,255,255,0.3);
+        }
+        
+        .fas.fa-coffee {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

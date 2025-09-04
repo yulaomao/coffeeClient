@@ -116,6 +116,37 @@ def product_detail(item_id):
                              error_code=500,
                              error_message='页面加载失败'), 500
 
+@customer_bp.route('/customize')
+def customize():
+    """定制页面"""
+    try:
+        # 获取购物车内容 - 首先尝试从session
+        cart = _get_cart()
+        cart_items = cart.get('items', []) if cart else []
+        
+        # 如果session中没有购物车，创建一个示例购物车用于演示
+        if not cart_items:
+            # 创建示例数据
+            cart_items = [
+                {
+                    'item_id': 'americano-001',
+                    'name': '经典美式',
+                    'price': 15.00,
+                    'price_cents': 1500,
+                    'qty': 1,
+                    'options': {}
+                }
+            ]
+        
+        return render_template('customer/customize.html',
+                             cart_items=cart_items)
+        
+    except Exception as e:
+        logger.error(f"定制页面加载失败: {e}")
+        return render_template('error.html',
+                             error_code=500,
+                             error_message='页面加载失败'), 500
+
 @customer_bp.route('/payment', methods=['GET', 'POST'])
 def payment():
     """支付选择页面"""
@@ -448,6 +479,12 @@ def brewing(order_id):
         return render_template('error.html',
                              error_code=500,
                              error_message='页面加载失败'), 500
+
+@customer_bp.route('/brewing_demo')
+def brewing_demo():
+    """制作演示页面"""
+    return render_template('customer/brewing.html', 
+                         order_id='DEMO-001')
 
 @customer_bp.route('/done/<order_id>')
 def done(order_id):

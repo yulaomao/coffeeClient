@@ -2,223 +2,631 @@
 
 {% block title %}咖啡菜单 - 智能自助咖啡机{% endblock %}
 
-{% block body_class %}fullscreen{% endblock %}
+{% block body_class %}menu-page{% endblock %}
+
+{% block head %}
+<style>
+    /* 菜单页面样式 */
+    .menu-page {
+        padding-top: 0;
+    }
+    
+    /* 导航栏 */
+    .menu-nav {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-xl));
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1rem 0;
+        position: sticky;
+        top: var(--touch-min);
+        z-index: var(--z-sticky);
+    }
+    
+    /* 分类标签 */
+    .category-tabs {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-md));
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1rem 0;
+        position: sticky;
+        top: calc(var(--touch-min) + 80px);
+        z-index: var(--z-sticky);
+    }
+    
+    .category-tab {
+        display: inline-flex;
+        align-items: center;
+        padding: 12px 24px;
+        margin: 0 8px;
+        border-radius: var(--radius-full);
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-secondary);
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition-normal);
+        cursor: pointer;
+        min-height: var(--touch-min);
+        white-space: nowrap;
+    }
+    
+    .category-tab:hover {
+        background: var(--glass-bg-hover);
+        color: var(--text-primary);
+        border-color: var(--neon-cyan);
+    }
+    
+    .category-tab.active {
+        background: rgba(0, 255, 198, 0.1);
+        border-color: var(--neon-cyan);
+        color: var(--neon-cyan);
+        box-shadow: 0 0 20px rgba(0, 255, 198, 0.2);
+    }
+    
+    /* 产品网格 */
+    .products-grid {
+        padding: 2rem 0;
+        min-height: 60vh;
+    }
+    
+    .product-item {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-lg));
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-xl);
+        padding: 1.5rem;
+        transition: var(--transition-normal);
+        cursor: pointer;
+        position: relative;
+        min-height: var(--touch-large);
+        margin-bottom: 1.5rem;
+    }
+    
+    .product-item:hover {
+        background: var(--glass-bg-hover);
+        border-color: var(--neon-cyan);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 
+            var(--shadow-xl),
+            0 0 30px rgba(0, 255, 198, 0.2);
+    }
+    
+    .product-item.unavailable {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    .product-item.unavailable::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-sm));
+        border-radius: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: var(--danger-glow);
+    }
+    
+    .product-image {
+        width: 80px;
+        height: 80px;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: var(--text-inverse);
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .product-name {
+        font-size: var(--font-size-lg);
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .product-description {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+    
+    .product-price {
+        font-size: var(--font-size-xl);
+        font-weight: 700;
+        color: var(--neon-cyan);
+        margin-bottom: 1rem;
+    }
+    
+    .product-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .product-tag {
+        padding: 4px 8px;
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 500;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-secondary);
+    }
+    
+    .product-tag.hot {
+        background: rgba(255, 176, 32, 0.2);
+        color: var(--warning-glow);
+    }
+    
+    .product-tag.new {
+        background: rgba(0, 255, 198, 0.2);
+        color: var(--neon-cyan);
+    }
+    
+    /* 购物车按钮 */
+    .add-to-cart {
+        position: absolute;
+        bottom: 1rem;
+        right: 1rem;
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
+        border: none;
+        color: var(--text-inverse);
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition-normal);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .add-to-cart:hover {
+        transform: scale(1.1);
+        box-shadow: 
+            var(--shadow-lg),
+            0 0 20px rgba(0, 255, 198, 0.4);
+    }
+    
+    /* 无商品状态 */
+    .no-products {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-secondary);
+    }
+    
+    .no-products-icon {
+        font-size: 4rem;
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        opacity: 0.5;
+    }
+    
+    /* 底部购物车栏 */
+    .cart-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-xl));
+        border-top: 1px solid var(--glass-border);
+        padding: 1rem;
+        z-index: var(--z-fixed);
+        transform: translateY(100%);
+        transition: var(--transition-normal);
+    }
+    
+    .cart-bar.active {
+        transform: translateY(0);
+    }
+    
+    .cart-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .cart-total {
+        font-size: var(--font-size-lg);
+        font-weight: 700;
+        color: var(--neon-cyan);
+    }
+    
+    .checkout-btn {
+        width: 100%;
+        min-height: var(--touch-comfortable);
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
+        border: none;
+        border-radius: var(--radius-lg);
+        color: var(--text-inverse);
+        font-size: var(--font-size-lg);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: var(--transition-normal);
+    }
+    
+    .checkout-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 
+            var(--shadow-lg),
+            0 0 30px rgba(0, 255, 198, 0.4);
+    }
+    
+    /* 响应式优化 */
+    @media (max-width: 768px) {
+        .products-grid {
+            padding: 1rem 0;
+        }
+        
+        .product-item {
+            padding: 1rem;
+        }
+        
+        .product-image {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container-fluid h-100 p-4">
-    <!-- 头部导航 -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav class="d-flex justify-content-between align-items-center">
-                <div>
-                    <a href="{{ url_for('customer.idle') }}" class="btn btn-light btn-lg rounded-pill">
-                        <i class="fas fa-arrow-left me-2"></i>返回
-                    </a>
-                </div>
-                <div>
-                    <h2 class="text-white mb-0 fw-bold">
-                        <i class="fas fa-coffee me-2"></i>选择您的咖啡
-                    </h2>
-                </div>
-                <div style="width: 120px;"></div>
-            </nav>
-        </div>
-    </div>
-    
-    <!-- 菜单内容（分类 + 商品） -->
-    <div class="row h-75 overflow-auto">
-        <div class="col-12">
-            {% if categories and categories|length > 0 %}
-                {% for cat in categories %}
-                <div class="mb-4">
-                    <div class="d-flex align-items-center mb-2">
-                        <h4 class="text-white-50 mb-0">{{ cat.name }}</h4>
-                        <div class="flex-fill border-bottom border-secondary ms-3" style="opacity:.3"></div>
-                    </div>
-                    <div class="row g-4">
-                        {% for item in cat['items'] %}
-                        <div class="col-lg-4 col-md-6 col-sm-12">
-                            <div class="card h-100 position-relative item-card {% if not item.available %}opacity-75{% endif %}" 
-                                 data-item-id="{{ item.id }}"
-                                 style="cursor: pointer; transition: all 0.3s ease;">
-                                {% if not item.available %}
-                                <div class="position-absolute top-0 end-0 m-2">
-                                    <span class="badge bg-danger rounded-pill px-3 py-2"><i class="fas fa-ban me-1"></i>售罄</span>
-                                </div>
-                                {% endif %}
-                                <div class="card-body text-center p-4">
-                                    <div class="mb-3">
-                                        {% if item.image_url %}
-                                        <img src="{{ item.image_url }}" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;" alt="{{ item.name }}"/>
-                                        {% else %}
-                                        <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                                            <i class="fas fa-coffee text-primary" style="font-size: 2.5rem;"></i>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    <h4 class="card-title text-dark fw-bold mb-2">{{ item.name }}</h4>
-                                    {% if item.badges and item.badges|length > 0 %}
-                                    <div class="mb-2">
-                                        {% for b in item.badges %}
-                                            <span class="badge rounded-pill bg-warning text-dark me-1">{{ b }}</span>
-                                        {% endfor %}
-                                    </div>
-                                    {% endif %}
-                                    <div class="mb-3">
-                                        <span class="h3 text-primary fw-bold">¥{{ "%.2f"|format(((item.price_cents|default(0))|int)/100) }}</span>
-                                    </div>
-                                    <div class="d-grid">
-                                        {% if item.available %}
-                                        <a href="{{ url_for('customer.product_detail', item_id=item.id) }}" class="btn btn-primary btn-lg rounded-pill">
-                                            <i class="fas fa-plus me-2"></i>立即选购
-                                        </a>
-                                        {% else %}
-                                        <button class="btn btn-outline-secondary btn-lg rounded-pill" data-bs-toggle="modal" data-bs-target="#unavailableModal{{ item.id }}">
-                                            <i class="fas fa-info-circle me-2"></i>查看原因
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 不可售原因弹窗（菜单层暂无详细原因，给出通用提示） -->
-                        {% if not item.available %}
-                        <div class="modal fade" id="unavailableModal{{ item.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content rounded-3">
-                                    <div class="modal-header border-0">
-                                        <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>暂不可售</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p class="mb-0">当前不在可售时间范围或已下架。</p>
-                                    </div>
-                                    <div class="modal-footer border-0">
-                                        <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">知道了</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-            <div class="text-center text-white">
-                <i class="fas fa-coffee-togo mb-3" style="font-size: 4rem; opacity: 0.5;"></i>
-                <h3 class="mb-3">暂无可用商品</h3>
-                <p class="text-white-50">请稍后再来或联系工作人员</p>
-                <a href="{{ url_for('customer.idle') }}" class="btn btn-light btn-lg rounded-pill mt-3"><i class="fas fa-home me-2"></i>返回首页</a>
+<!-- 导航栏 -->
+<div class="menu-nav">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <a href="{{ url_for('customer.idle') }}" class="btn btn-cyber">
+                    <i class="fas fa-arrow-left me-2"></i>返回
+                </a>
             </div>
-            {% endif %}
-        </div>
-    </div>
-    
-    <!-- 底部提示 -->
-    <div class="position-fixed bottom-0 w-100 bg-dark bg-opacity-75 text-white p-2">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-6">
-                    <small>
-                        <i class="fas fa-info-circle me-2"></i>
-                        点击商品查看详情
-                    </small>
-                </div>
-                <div class="col-6 text-end">
-                    <small id="menuStatus" data-total-count="{{ total_count|default(0) }}">共 {{ total_count|default(0) }} 款咖啡，{{ available_count|default(0) }} 款可选</small>
-                </div>
+            <div class="col text-center">
+                <h2 class="text-primary mb-0 fw-bold">
+                    <i class="fas fa-coffee me-2"></i>选择您的咖啡
+                </h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-cyber" onclick="toggleFilter()">
+                    <i class="fas fa-filter"></i>
+                </button>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- 分类标签 -->
+<div class="category-tabs">
+    <div class="container-fluid">
+        <div class="d-flex overflow-auto">
+            <a href="#" class="category-tab active" data-category="all">
+                <i class="fas fa-coffee me-2"></i>全部
+            </a>
+            <a href="#" class="category-tab" data-category="espresso">
+                <i class="fas fa-circle me-2"></i>浓缩咖啡
+            </a>
+            <a href="#" class="category-tab" data-category="americano">
+                <i class="fas fa-mug-hot me-2"></i>美式咖啡
+            </a>
+            <a href="#" class="category-tab" data-category="latte">
+                <i class="fas fa-coffee me-2"></i>拿铁
+            </a>
+            <a href="#" class="category-tab" data-category="cappuccino">
+                <i class="fas fa-coffee me-2"></i>卡布奇诺
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 产品网格 -->
+<div class="products-grid">
+    <div class="container-fluid">
+        {% if categories and categories|length > 0 %}
+            <div class="row" id="productsContainer">
+                <!-- 动态加载的产品将显示在这里 -->
+            </div>
+        {% else %}
+            <!-- 暂时使用示例数据 -->
+            <div class="row" id="productsContainer">
+                <!-- 示例产品 1 -->
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-item touch-feedback" data-product-id="americano-001">
+                        <div class="product-image">
+                            <i class="fas fa-mug-hot"></i>
+                        </div>
+                        <div class="product-name">经典美式</div>
+                        <div class="product-description">精选阿拉比卡豆，香醇浓郁，回味甘甜</div>
+                        <div class="product-price">¥15.00</div>
+                        <div class="product-tags">
+                            <span class="product-tag hot">热卖</span>
+                            <span class="product-tag">无糖</span>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('americano-001')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 示例产品 2 -->
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-item touch-feedback" data-product-id="latte-001">
+                        <div class="product-image">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="product-name">香草拿铁</div>
+                        <div class="product-description">香滑牛奶与浓缩咖啡的完美融合</div>
+                        <div class="product-price">¥22.00</div>
+                        <div class="product-tags">
+                            <span class="product-tag new">新品</span>
+                            <span class="product-tag">牛奶</span>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('latte-001')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 示例产品 3 -->
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-item touch-feedback" data-product-id="cappuccino-001">
+                        <div class="product-image">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="product-name">卡布奇诺</div>
+                        <div class="product-description">浓郁奶泡与咖啡的经典搭配</div>
+                        <div class="product-price">¥20.00</div>
+                        <div class="product-tags">
+                            <span class="product-tag">经典</span>
+                            <span class="product-tag">奶泡</span>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('cappuccino-001')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 示例产品 4 - 不可售 -->
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-item unavailable">
+                        <div class="product-image">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="product-name">摩卡咖啡</div>
+                        <div class="product-description">巧克力与咖啡的浪漫邂逅</div>
+                        <div class="product-price">¥25.00</div>
+                        <div class="product-tags">
+                            <span class="product-tag">巧克力</span>
+                        </div>
+                        <div class="unavailable-overlay">
+                            <span>暂时缺货</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 示例产品 5 -->
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-item touch-feedback" data-product-id="espresso-001">
+                        <div class="product-image">
+                            <i class="fas fa-circle"></i>
+                        </div>
+                        <div class="product-name">单份浓缩</div>
+                        <div class="product-description">纯正意式浓缩，浓郁醇厚</div>
+                        <div class="product-price">¥12.00</div>
+                        <div class="product-tags">
+                            <span class="product-tag">浓缩</span>
+                            <span class="product-tag">强劲</span>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('espresso-001')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 示例产品 6 -->
+                <div class="col-lg-4 col-md-6 col-12">
+                    <div class="product-item touch-feedback" data-product-id="macchiato-001">
+                        <div class="product-image">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <div class="product-name">焦糖玛奇朵</div>
+                        <div class="product-description">甜蜜焦糖与浓缩咖啡的完美平衡</div>
+                        <div class="product-price">¥26.00</div>
+                        <div class="product-tags">
+                            <span class="product-tag">甜味</span>
+                            <span class="product-tag">焦糖</span>
+                        </div>
+                        <button class="add-to-cart" onclick="addToCart('macchiato-001')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 购物车栏 -->
+<div class="cart-bar" id="cartBar">
+    <div class="container-fluid">
+        <div class="cart-summary">
+            <div>
+                <span class="text-secondary">已选择 </span>
+                <span id="cartCount">0</span>
+                <span class="text-secondary"> 件商品</span>
+            </div>
+            <div class="cart-total" id="cartTotal">¥0.00</div>
+        </div>
+        <button class="checkout-btn" onclick="proceedToCustomize()">
+            <i class="fas fa-cog me-2"></i>定制选项
+        </button>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // 实时更新菜单状态
-    function updateMenuStatus() {
-        fetch('/api/v1/devices/{{ device_id }}/menu/available')
-            .then(r => r.json())
-            .then(payload => {
-                if (!payload || !payload.ok) return;
-                const avail = new Set(payload.data || []);
-                // 更新卡片灰显
-                document.querySelectorAll('.item-card').forEach(card => {
-                    const id = card.getAttribute('data-item-id');
-                    const isAvail = avail.has(id);
-                    card.classList.toggle('opacity-75', !isAvail);
-                });
-                // 更新底部状态显示
-                const statusElement = document.getElementById('menuStatus');
-                const total = parseInt(statusElement?.dataset?.totalCount || '0');
-                if (statusElement) {
-                    statusElement.innerHTML = `共 ${total} 款咖啡，${avail.size} 款可选`;
-                }
-            })
-            .catch(err => console.error('更新菜单状态失败:', err));
+// 购物车管理
+let cart = [];
+let totalPrice = 0;
+
+// 分类切换
+document.querySelectorAll('.category-tab').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // 更新激活状态
+        document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        // 过滤产品
+        const category = this.dataset.category;
+        filterProducts(category);
+    });
+});
+
+// 产品过滤
+function filterProducts(category) {
+    const products = document.querySelectorAll('.product-item');
+    
+    products.forEach(product => {
+        if (category === 'all') {
+            product.parentElement.style.display = 'block';
+        } else {
+            // 简单的过滤逻辑，实际应用中会基于数据属性
+            const productId = product.dataset.productId;
+            if (productId && productId.includes(category)) {
+                product.parentElement.style.display = 'block';
+            } else {
+                product.parentElement.style.display = 'none';
+            }
+        }
+    });
+}
+
+// 添加到购物车
+function addToCart(productId) {
+    const productElement = document.querySelector(`[data-product-id="${productId}"]`);
+    if (!productElement) return;
+    
+    const name = productElement.querySelector('.product-name').textContent;
+    const price = parseFloat(productElement.querySelector('.product-price').textContent.replace('¥', ''));
+    
+    // 检查是否已在购物车中
+    const existingItem = cart.find(item => item.id === productId);
+    if (existingItem) {
+        existingItem.quantity += 1;
+    } else {
+        cart.push({
+            id: productId,
+            name: name,
+            price: price,
+            quantity: 1
+        });
     }
     
-    // 每10秒更新一次菜单状态
-    setInterval(updateMenuStatus, 10000);
+    updateCartDisplay();
     
-    // SSE事件监听
-    const eventSource = new EventSource('/events');
+    // 视觉反馈
+    const button = productElement.querySelector('.add-to-cart');
+    button.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+        button.style.transform = '';
+    }, 200);
     
-    eventSource.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-        console.log('收到事件:', data);
-        
-        // 物料更新事件
-        if (data.type === 'material_update') {
-            updateMenuStatus();
+    // 显示成功提示
+    if (window.CoffeeMachine && window.CoffeeMachine.showToast) {
+        window.CoffeeMachine.showToast(`${name} 已添加到购物车`, 'success', 2000);
+    }
+}
+
+// 更新购物车显示
+function updateCartDisplay() {
+    const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    document.getElementById('cartCount').textContent = cartCount;
+    document.getElementById('cartTotal').textContent = `¥${cartTotal.toFixed(2)}`;
+    
+    const cartBar = document.getElementById('cartBar');
+    if (cartCount > 0) {
+        cartBar.classList.add('active');
+    } else {
+        cartBar.classList.remove('active');
+    }
+}
+
+// 前往定制页面
+function proceedToCustomize() {
+    if (cart.length === 0) {
+        if (window.CoffeeMachine && window.CoffeeMachine.showToast) {
+            window.CoffeeMachine.showToast('请先选择商品', 'warning');
         }
-        // 菜单更新事件
-        if (data.type === 'menu_update') {
-            updateMenuStatus();
-        }
-        
-        // 网络状态事件
-        if (data.type === 'net_status') {
-            if (!data.online) {
-                window.location.href = '/customer/out_of_service?reason=network';
+        return;
+    }
+    
+    // 存储购物车到会话存储
+    sessionStorage.setItem('cart', JSON.stringify(cart));
+    
+    // 跳转到定制页面
+    window.location.href = '/customize';
+}
+
+// 切换过滤器
+function toggleFilter() {
+    // 简单的切换可售/全部显示
+    const unavailableProducts = document.querySelectorAll('.product-item.unavailable');
+    const isHidden = unavailableProducts[0]?.parentElement.style.display === 'none';
+    
+    unavailableProducts.forEach(product => {
+        product.parentElement.style.display = isHidden ? 'block' : 'none';
+    });
+}
+
+// 触控反馈增强
+document.querySelectorAll('.product-item:not(.unavailable)').forEach(item => {
+    item.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.98)';
+    });
+    
+    item.addEventListener('touchend', function() {
+        setTimeout(() => {
+            this.style.transform = '';
+        }, 150);
+    });
+    
+    // 点击产品卡片也可以添加到购物车
+    item.addEventListener('click', function(e) {
+        if (!e.target.closest('.add-to-cart')) {
+            const productId = this.dataset.productId;
+            if (productId) {
+                addToCart(productId);
             }
         }
-    };
-    
-    eventSource.onerror = function(event) {
-        console.error('SSE连接错误:', event);
-        // 可以显示网络连接问题提示
-    };
-    
-    // 页面卸载时关闭SSE连接
-    window.addEventListener('beforeunload', function() {
-        eventSource.close();
     });
-    
-    // 商品卡片悬停效果
-    document.querySelectorAll('.card').forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            if (!this.classList.contains('opacity-75')) {
-                this.style.transform = 'translateY(-8px) scale(1.02)';
-            }
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0) scale(1)';
-        });
-    });
-    
-    // 触控反馈
-    document.querySelectorAll('.btn').forEach(btn => {
-        btn.addEventListener('touchstart', function() {
-            this.style.transform = 'scale(0.95)';
-        });
-        
-        btn.addEventListener('touchend', function() {
-            this.style.transform = 'scale(1)';
-        });
-    });
+});
+
+// 更新可用商品数量
+document.addEventListener('DOMContentLoaded', function() {
+    const availableProducts = document.querySelectorAll('.product-item:not(.unavailable)').length;
+    const availableCountElement = document.getElementById('availableCount');
+    if (availableCountElement) {
+        availableCountElement.textContent = availableProducts;
+    }
+});
 </script>
 {% endblock %}

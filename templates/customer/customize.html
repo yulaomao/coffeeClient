@@ -1,0 +1,884 @@
+{% extends "base.html" %}
+
+{% block title %}定制您的咖啡 - 智能自助咖啡机{% endblock %}
+
+{% block body_class %}customize-page{% endblock %}
+
+{% block head %}
+<style>
+    /* 定制页面样式 */
+    .customize-page {
+        padding-top: 0;
+    }
+    
+    /* 导航栏 */
+    .customize-nav {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-xl));
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1rem 0;
+        position: sticky;
+        top: var(--touch-min);
+        z-index: var(--z-sticky);
+    }
+    
+    /* 步骤指示器 */
+    .step-indicator {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-md));
+        border-bottom: 1px solid var(--glass-border);
+        padding: 1rem 0;
+        position: sticky;
+        top: calc(var(--touch-min) + 80px);
+        z-index: var(--z-sticky);
+    }
+    
+    .step {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--glass-bg);
+        border: 2px solid var(--glass-border);
+        color: var(--text-secondary);
+        font-weight: 600;
+        transition: var(--transition-normal);
+    }
+    
+    .step.active {
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
+        border-color: var(--neon-cyan);
+        color: var(--text-inverse);
+        box-shadow: 0 0 20px rgba(0, 255, 198, 0.4);
+    }
+    
+    .step.completed {
+        background: var(--success-glow);
+        border-color: var(--success-glow);
+        color: var(--text-inverse);
+    }
+    
+    .step-line {
+        height: 2px;
+        background: var(--glass-border);
+        flex: 1;
+        margin: 0 1rem;
+    }
+    
+    .step-line.active {
+        background: linear-gradient(90deg, var(--neon-cyan), var(--neon-blue));
+        box-shadow: 0 0 10px rgba(0, 255, 198, 0.3);
+    }
+    
+    /* 产品卡片 */
+    .product-customize-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-lg));
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-xl);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        transition: var(--transition-normal);
+    }
+    
+    .product-customize-card:hover {
+        background: var(--glass-bg-hover);
+        border-color: var(--neon-cyan);
+        box-shadow: 
+            var(--shadow-lg),
+            0 0 20px rgba(0, 255, 198, 0.1);
+    }
+    
+    .product-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--glass-border);
+    }
+    
+    .product-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--text-inverse);
+        margin-right: 1rem;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .product-info h5 {
+        color: var(--text-primary);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .product-info .price {
+        color: var(--neon-cyan);
+        font-weight: 600;
+        font-size: var(--font-size-lg);
+    }
+    
+    /* 定制选项组 */
+    .customize-group {
+        margin-bottom: 2rem;
+    }
+    
+    .group-title {
+        color: var(--text-primary);
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .group-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-sm);
+        background: rgba(0, 255, 198, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--neon-cyan);
+        margin-right: 0.75rem;
+    }
+    
+    /* 选项按钮组 */
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+    
+    .option-btn {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 1rem;
+        text-align: center;
+        transition: var(--transition-normal);
+        cursor: pointer;
+        min-height: var(--touch-comfortable);
+        position: relative;
+    }
+    
+    .option-btn:hover {
+        background: var(--glass-bg-hover);
+        border-color: var(--neon-cyan);
+        transform: translateY(-2px);
+    }
+    
+    .option-btn.selected {
+        background: rgba(0, 255, 198, 0.1);
+        border-color: var(--neon-cyan);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 198, 0.2),
+            inset 0 0 20px rgba(0, 255, 198, 0.1);
+    }
+    
+    .option-btn.selected::after {
+        content: '✓';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--neon-cyan);
+        color: var(--text-inverse);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    
+    .option-name {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+    
+    .option-price {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+    }
+    
+    .option-price.extra {
+        color: var(--warning-glow);
+    }
+    
+    /* 滑块控制器 */
+    .slider-group {
+        margin-bottom: 2rem;
+    }
+    
+    .slider-container {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+    }
+    
+    .slider-track {
+        position: relative;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius-full);
+        margin: 1rem 0;
+    }
+    
+    .slider-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--neon-cyan), var(--neon-blue));
+        border-radius: var(--radius-full);
+        transition: var(--transition-normal);
+        box-shadow: 0 0 10px rgba(0, 255, 198, 0.3);
+    }
+    
+    .slider-thumb {
+        position: absolute;
+        top: -8px;
+        width: 24px;
+        height: 24px;
+        background: var(--neon-cyan);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: var(--transition-normal);
+        box-shadow: 
+            0 0 20px rgba(0, 255, 198, 0.4),
+            0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 
+            0 0 30px rgba(0, 255, 198, 0.6),
+            0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+    
+    .slider-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+    }
+    
+    .slider-label {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+    }
+    
+    /* 数量选择器 */
+    .quantity-selector {
+        display: flex;
+        align-items: center;
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 0.5rem;
+        width: fit-content;
+    }
+    
+    .quantity-btn {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        transition: var(--transition-fast);
+        cursor: pointer;
+    }
+    
+    .quantity-btn:hover {
+        background: var(--glass-bg-hover);
+        color: var(--neon-cyan);
+    }
+    
+    .quantity-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+    
+    .quantity-display {
+        min-width: 60px;
+        text-align: center;
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--text-primary);
+        padding: 0 1rem;
+    }
+    
+    /* 底部操作栏 */
+    .customize-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-xl));
+        border-top: 1px solid var(--glass-border);
+        padding: 1.5rem;
+        z-index: var(--z-fixed);
+    }
+    
+    .total-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: rgba(0, 255, 198, 0.05);
+        border: 1px solid rgba(0, 255, 198, 0.2);
+        border-radius: var(--radius-lg);
+    }
+    
+    .total-label {
+        font-size: var(--font-size-lg);
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+    
+    .total-price {
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+        color: var(--neon-cyan);
+        text-shadow: 0 0 10px rgba(0, 255, 198, 0.3);
+    }
+    
+    .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 1rem;
+    }
+    
+    .back-btn {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: var(--text-primary);
+    }
+    
+    .back-btn:hover {
+        background: var(--glass-bg-hover);
+        border-color: var(--text-secondary);
+    }
+    
+    .proceed-btn {
+        background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue));
+        border: none;
+        color: var(--text-inverse);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 
+            0 0 20px rgba(0, 255, 198, 0.4),
+            0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .proceed-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 
+            0 0 30px rgba(0, 255, 198, 0.6),
+            0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    
+    .proceed-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .options-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .product-customize-card {
+            padding: 1.5rem;
+        }
+        
+        .customize-footer {
+            padding: 1rem;
+        }
+        
+        .action-buttons {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- 导航栏 -->
+<div class="customize-nav">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <a href="{{ url_for('customer.menu') }}" class="btn btn-cyber">
+                    <i class="fas fa-arrow-left me-2"></i>返回菜单
+                </a>
+            </div>
+            <div class="col text-center">
+                <h2 class="text-primary mb-0 fw-bold">
+                    <i class="fas fa-cog me-2"></i>定制您的咖啡
+                </h2>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-cyber" onclick="resetCustomization()">
+                    <i class="fas fa-undo"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 步骤指示器 -->
+<div class="step-indicator">
+    <div class="container-fluid">
+        <div class="d-flex align-items-center justify-content-center">
+            <div class="step completed">1</div>
+            <div class="step-line active"></div>
+            <div class="step active">2</div>
+            <div class="step-line"></div>
+            <div class="step">3</div>
+        </div>
+        <div class="text-center mt-2">
+            <small class="text-secondary">选择商品 → <span class="text-primary">定制选项</span> → 支付制作</small>
+        </div>
+    </div>
+</div>
+
+<!-- 定制内容 -->
+<div class="container-fluid py-4" style="margin-bottom: 180px;">
+    {% if cart_items %}
+        {% for cart_item in cart_items %}
+        <div class="product-customize-card" data-item-id="{{ cart_item.item_id }}">
+            <!-- 产品头部 -->
+            <div class="product-header">
+                <div class="product-avatar">
+                    <i class="fas fa-coffee"></i>
+                </div>
+                <div class="product-info flex-grow-1">
+                    <h5>{{ cart_item.get('name', '咖啡') }}</h5>
+                    <div class="price" data-base-price="{{ cart_item.get('price', 0) }}">
+                        ¥<span class="price-amount">{{ "%.2f"|format(cart_item.get('price', 0)) }}</span>
+                    </div>
+                </div>
+                <div class="quantity-selector">
+                    <button class="quantity-btn" onclick="updateQuantity('{{ cart_item.item_id }}', -1)">−</button>
+                    <div class="quantity-display" data-quantity="{{ cart_item.get('quantity', 1) }}">{{ cart_item.get('quantity', 1) }}</div>
+                    <button class="quantity-btn" onclick="updateQuantity('{{ cart_item.item_id }}', 1)">+</button>
+                </div>
+            </div>
+            
+            <!-- 容量选择 -->
+            <div class="customize-group">
+                <div class="group-title">
+                    <div class="group-icon">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </div>
+                    容量选择
+                </div>
+                <div class="options-grid">
+                    <div class="option-btn selected" data-option="size" data-value="regular" data-price="0">
+                        <div class="option-name">标准杯</div>
+                        <div class="option-price">350ml</div>
+                    </div>
+                    <div class="option-btn" data-option="size" data-value="large" data-price="3.00">
+                        <div class="option-name">大杯</div>
+                        <div class="option-price extra">+¥3.00 • 500ml</div>
+                    </div>
+                    <div class="option-btn" data-option="size" data-value="super" data-price="5.00">
+                        <div class="option-name">超大杯</div>
+                        <div class="option-price extra">+¥5.00 • 700ml</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 温度选择 -->
+            <div class="customize-group">
+                <div class="group-title">
+                    <div class="group-icon">
+                        <i class="fas fa-thermometer-half"></i>
+                    </div>
+                    温度选择
+                </div>
+                <div class="options-grid">
+                    <div class="option-btn selected" data-option="temperature" data-value="hot" data-price="0">
+                        <div class="option-name">热饮</div>
+                        <div class="option-price">65-75°C</div>
+                    </div>
+                    <div class="option-btn" data-option="temperature" data-value="warm" data-price="0">
+                        <div class="option-name">温饮</div>
+                        <div class="option-price">45-55°C</div>
+                    </div>
+                    <div class="option-btn" data-option="temperature" data-value="cold" data-price="0">
+                        <div class="option-name">冷饮</div>
+                        <div class="option-price">5-10°C</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 甜度调节 -->
+            <div class="slider-group">
+                <div class="group-title">
+                    <div class="group-icon">
+                        <i class="fas fa-candy-cane"></i>
+                    </div>
+                    甜度调节
+                </div>
+                <div class="slider-container">
+                    <div class="slider-track">
+                        <div class="slider-fill" style="width: 50%"></div>
+                        <div class="slider-thumb" style="left: calc(50% - 12px)"></div>
+                    </div>
+                    <div class="slider-labels">
+                        <span class="slider-label">无糖</span>
+                        <span class="slider-label">三分糖</span>
+                        <span class="slider-label">半糖</span>
+                        <span class="slider-label">七分糖</span>
+                        <span class="slider-label">全糖</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 浓度选择 -->
+            <div class="customize-group">
+                <div class="group-title">
+                    <div class="group-icon">
+                        <i class="fas fa-tint"></i>
+                    </div>
+                    咖啡浓度
+                </div>
+                <div class="options-grid">
+                    <div class="option-btn" data-option="strength" data-value="light" data-price="0">
+                        <div class="option-name">清淡</div>
+                        <div class="option-price">温和口感</div>
+                    </div>
+                    <div class="option-btn selected" data-option="strength" data-value="medium" data-price="0">
+                        <div class="option-name">适中</div>
+                        <div class="option-price">经典口感</div>
+                    </div>
+                    <div class="option-btn" data-option="strength" data-value="strong" data-price="0">
+                        <div class="option-name">浓郁</div>
+                        <div class="option-price">强劲口感</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 额外添加 -->
+            <div class="customize-group">
+                <div class="group-title">
+                    <div class="group-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    额外添加
+                </div>
+                <div class="options-grid">
+                    <div class="option-btn" data-option="extra" data-value="shot" data-price="3.00">
+                        <div class="option-name">浓缩Shot</div>
+                        <div class="option-price extra">+¥3.00</div>
+                    </div>
+                    <div class="option-btn" data-option="extra" data-value="syrup" data-price="2.00">
+                        <div class="option-name">香草糖浆</div>
+                        <div class="option-price extra">+¥2.00</div>
+                    </div>
+                    <div class="option-btn" data-option="extra" data-value="cream" data-price="2.50">
+                        <div class="option-name">奶泡加厚</div>
+                        <div class="option-price extra">+¥2.50</div>
+                    </div>
+                    <div class="option-btn" data-option="extra" data-value="caramel" data-price="2.50">
+                        <div class="option-name">焦糖酱</div>
+                        <div class="option-price extra">+¥2.50</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <div class="no-products-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h3 class="text-secondary mb-3">购物车为空</h3>
+            <p class="text-muted">请先选择商品再进行定制</p>
+            <a href="{{ url_for('customer.menu') }}" class="btn btn-cyber btn-cyber-large">
+                <i class="fas fa-arrow-left me-2"></i>返回菜单
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- 底部操作栏 -->
+{% if cart_items %}
+<div class="customize-footer">
+    <div class="container-fluid">
+        <div class="total-summary">
+            <div class="total-label">
+                <i class="fas fa-calculator me-2"></i>
+                总计金额
+            </div>
+            <div class="total-price" id="totalPrice">¥0.00</div>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="btn btn-cyber back-btn" onclick="goBack()">
+                <i class="fas fa-arrow-left me-2"></i>返回
+            </button>
+            <button class="btn btn-cyber proceed-btn" onclick="proceedToPayment()">
+                <i class="fas fa-credit-card me-2"></i>立即支付
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 定制选项数据
+let customizations = {};
+let totalPrice = 0;
+
+// 初始化
+document.addEventListener('DOMContentLoaded', function() {
+    initializeCustomizations();
+    setupOptionHandlers();
+    setupSliders();
+    updateTotalPrice();
+});
+
+// 初始化定制选项
+function initializeCustomizations() {
+    document.querySelectorAll('.product-customize-card').forEach(card => {
+        const itemId = card.dataset.itemId;
+        customizations[itemId] = {
+            size: 'regular',
+            temperature: 'hot',
+            sweetness: 50,
+            strength: 'medium',
+            extras: [],
+            quantity: parseInt(card.querySelector('.quantity-display').dataset.quantity)
+        };
+    });
+}
+
+// 设置选项处理器
+function setupOptionHandlers() {
+    document.querySelectorAll('.option-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const option = this.dataset.option;
+            const value = this.dataset.value;
+            const itemId = this.closest('.product-customize-card').dataset.itemId;
+            
+            if (option === 'extra') {
+                // 额外选项可以多选
+                toggleExtra(itemId, value, this);
+            } else {
+                // 其他选项单选
+                selectOption(itemId, option, value, this);
+            }
+            
+            updateTotalPrice();
+        });
+    });
+}
+
+// 选择选项（单选）
+function selectOption(itemId, option, value, element) {
+    // 移除同组其他选项的选中状态
+    const group = element.closest('.customize-group');
+    group.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // 选中当前选项
+    element.classList.add('selected');
+    customizations[itemId][option] = value;
+}
+
+// 切换额外选项（多选）
+function toggleExtra(itemId, value, element) {
+    const extras = customizations[itemId].extras;
+    const index = extras.indexOf(value);
+    
+    if (index > -1) {
+        // 移除
+        extras.splice(index, 1);
+        element.classList.remove('selected');
+    } else {
+        // 添加
+        extras.push(value);
+        element.classList.add('selected');
+    }
+}
+
+// 设置滑块
+function setupSliders() {
+    document.querySelectorAll('.slider-thumb').forEach(thumb => {
+        let isDragging = false;
+        
+        thumb.addEventListener('mousedown', function(e) {
+            isDragging = true;
+            document.addEventListener('mousemove', handleSliderMove);
+            document.addEventListener('mouseup', handleSliderEnd);
+        });
+        
+        thumb.addEventListener('touchstart', function(e) {
+            isDragging = true;
+            document.addEventListener('touchmove', handleSliderMove);
+            document.addEventListener('touchend', handleSliderEnd);
+        });
+        
+        function handleSliderMove(e) {
+            if (!isDragging) return;
+            
+            const track = thumb.closest('.slider-track');
+            const rect = track.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let percentage = ((clientX - rect.left) / rect.width) * 100;
+            
+            percentage = Math.max(0, Math.min(100, percentage));
+            
+            const fill = track.querySelector('.slider-fill');
+            fill.style.width = percentage + '%';
+            thumb.style.left = `calc(${percentage}% - 12px)`;
+            
+            // 更新甜度值
+            const itemId = thumb.closest('.product-customize-card').dataset.itemId;
+            customizations[itemId].sweetness = percentage;
+        }
+        
+        function handleSliderEnd() {
+            isDragging = false;
+            document.removeEventListener('mousemove', handleSliderMove);
+            document.removeEventListener('mouseup', handleSliderEnd);
+            document.removeEventListener('touchmove', handleSliderMove);
+            document.removeEventListener('touchend', handleSliderEnd);
+        }
+    });
+}
+
+// 更新数量
+function updateQuantity(itemId, delta) {
+    const quantityDisplay = document.querySelector(`[data-item-id="${itemId}"] .quantity-display`);
+    let quantity = parseInt(quantityDisplay.textContent);
+    
+    quantity += delta;
+    if (quantity < 1) quantity = 1;
+    if (quantity > 10) quantity = 10;
+    
+    quantityDisplay.textContent = quantity;
+    quantityDisplay.dataset.quantity = quantity;
+    customizations[itemId].quantity = quantity;
+    
+    updateTotalPrice();
+}
+
+// 更新总价
+function updateTotalPrice() {
+    let total = 0;
+    
+    Object.keys(customizations).forEach(itemId => {
+        const card = document.querySelector(`[data-item-id="${itemId}"]`);
+        const basePrice = parseFloat(card.querySelector('.price').dataset.basePrice);
+        const quantity = customizations[itemId].quantity;
+        
+        let itemPrice = basePrice;
+        
+        // 计算容量加价
+        const sizeBtn = card.querySelector(`[data-option="size"][data-value="${customizations[itemId].size}"]`);
+        if (sizeBtn) {
+            itemPrice += parseFloat(sizeBtn.dataset.price || 0);
+        }
+        
+        // 计算额外选项加价
+        customizations[itemId].extras.forEach(extra => {
+            const extraBtn = card.querySelector(`[data-option="extra"][data-value="${extra}"]`);
+            if (extraBtn) {
+                itemPrice += parseFloat(extraBtn.dataset.price || 0);
+            }
+        });
+        
+        total += itemPrice * quantity;
+        
+        // 更新单项价格显示
+        card.querySelector('.price-amount').textContent = itemPrice.toFixed(2);
+    });
+    
+    totalPrice = total;
+    document.getElementById('totalPrice').textContent = `¥${total.toFixed(2)}`;
+}
+
+// 重置定制
+function resetCustomization() {
+    if (confirm('确定要重置所有定制选项吗？')) {
+        // 重置所有选项到默认状态
+        document.querySelectorAll('.option-btn.selected').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        // 设置默认选中项
+        document.querySelectorAll('[data-option="size"][data-value="regular"]').forEach(btn => {
+            btn.classList.add('selected');
+        });
+        document.querySelectorAll('[data-option="temperature"][data-value="hot"]').forEach(btn => {
+            btn.classList.add('selected');
+        });
+        document.querySelectorAll('[data-option="strength"][data-value="medium"]').forEach(btn => {
+            btn.classList.add('selected');
+        });
+        
+        // 重置滑块
+        document.querySelectorAll('.slider-fill').forEach(fill => {
+            fill.style.width = '50%';
+        });
+        document.querySelectorAll('.slider-thumb').forEach(thumb => {
+            thumb.style.left = 'calc(50% - 12px)';
+        });
+        
+        initializeCustomizations();
+        updateTotalPrice();
+    }
+}
+
+// 返回菜单
+function goBack() {
+    window.history.back();
+}
+
+// 前往支付
+function proceedToPayment() {
+    // 保存定制选项
+    sessionStorage.setItem('customizations', JSON.stringify(customizations));
+    sessionStorage.setItem('totalPrice', totalPrice.toString());
+    
+    // 跳转到支付页面
+    window.location.href = '/payment';
+}
+
+// 触控反馈
+document.querySelectorAll('.option-btn, .quantity-btn').forEach(element => {
+    element.addEventListener('touchstart', function() {
+        this.style.transform = 'scale(0.95)';
+    });
+    
+    element.addEventListener('touchend', function() {
+        setTimeout(() => {
+            this.style.transform = '';
+        }, 150);
+    });
+});
+</script>
+{% endblock %}
